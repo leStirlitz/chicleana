@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chicleana — Limpia tu Bahía</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Firebase -->
@@ -32,153 +35,813 @@
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
     <style>
+        /* ===== Design System: Contemporary Minimalist ===== */
         :root {
-            --ocean: #0077b6;
-            --pin-open: #e63946;
-            --pin-claimed: #f59e0b;
-            --pin-cleaned: #22c55e;
+            /* Primary palette */
+            --ocean: #0891b2;
+            --ocean-light: #22d3ee;
+            --ocean-dark: #0e7490;
+            --teal: #14b8a6;
+            --teal-dark: #0d9488;
+            
+            /* Accent */
+            --sand: #fbbf24;
+            --sand-light: #fcd34d;
+            
+            /* Status */
+            --red: #ef4444;
+            --red-light: #fca5a5;
+            --amber: #f59e0b;
+            --green: #22c55e;
+            --green-light: #86efac;
+            
+            /* Neutrals */
+            --white: #ffffff;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            
+            /* Effects */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            
+            /* Radius */
+            --radius-sm: 6px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+            
+            /* Transitions */
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-800);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== Header ===== */
         #header {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-            background: var(--ocean); color: white;
+            background: linear-gradient(135deg, var(--ocean) 0%, var(--teal) 100%);
+            color: white;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 8px 16px; height: 48px;
+            padding: 0 16px; height: 56px;
+            box-shadow: var(--shadow-md);
         }
-        #header h1 { font-size: 1.2rem; }
+        
+        #header h1 { 
+            font-size: 1.25rem; 
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         #header nav { display: flex; gap: 4px; }
-        #header nav button {
-            background: transparent; border: none; color: white;
-            font-size: 1.3rem; padding: 8px; border-radius: 6px;
-            cursor: pointer; min-width: 44px; min-height: 44px;
-            opacity: 0.7; transition: opacity 0.2s;
+        
+        .nav-btn {
+            background: transparent; 
+            border: none; 
+            color: white;
+            font-size: 1.25rem; 
+            padding: 10px;
+            border-radius: var(--radius);
+            cursor: pointer; 
+            min-width: 44px; 
+            min-height: 44px;
+            opacity: 0.75; 
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        #header nav button.active, #header nav button:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+        
+        .nav-btn:hover { 
+            opacity: 1; 
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+        
+        .nav-btn.active { 
+            opacity: 1; 
+            background: rgba(255,255,255,0.2);
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.3);
+        }
 
-        #map { position: fixed; top: 48px; left: 0; right: 0; bottom: 0; z-index: 1; }
+        /* ===== Map ===== */
+        #map { 
+            position: fixed; 
+            top: 56px; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            z-index: 1; 
+        }
 
+        /* ===== Legend ===== */
         .legend {
-            position: fixed; bottom: 12px; left: 12px; z-index: 999;
-            background: rgba(255,255,255,0.95); border-radius: 6px;
-            padding: 8px 12px; font-size: 0.75rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            display: flex; gap: 12px;
+            position: fixed; 
+            bottom: 20px; 
+            left: 16px; 
+            z-index: 999;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: var(--radius);
+            padding: 10px 16px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            display: flex; 
+            gap: 16px;
+            border: 1px solid rgba(255,255,255,0.8);
         }
-        .legend-item { display: flex; align-items: center; gap: 4px; }
-        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        
+        .legend-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px;
+            color: var(--gray-600);
+        }
+        
+        .legend-dot { 
+            width: 12px; 
+            height: 12px; 
+            border-radius: var(--radius-full);
+            box-shadow: var(--shadow-sm);
+        }
 
+        /* ===== Status Badges ===== */
         .status-badge {
-            display: inline-block; padding: 2px 8px; border-radius: 12px;
-            font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-        .status-open { background: var(--pin-open); color: white; }
-        .status-claimed { background: var(--pin-claimed); color: #1a1a2e; }
-        .status-cleaned { background: var(--pin-cleaned); color: white; }
+        
+        .status-open { 
+            background: linear-gradient(135deg, var(--red) 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        .status-claimed { 
+            background: linear-gradient(135deg, var(--amber) 0%, #d97706 100%);
+            color: var(--gray-900);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+        .status-cleaned { 
+            background: linear-gradient(135deg, var(--green) 0%, #16a34a 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+        }
 
-        /* Panels that overlay the map */
+        /* ===== Panels ===== */
         .panel {
-            position: fixed; top: 48px; left: 0; right: 0; bottom: 0;
-            z-index: 500; background: #f8f9fa; overflow-y: auto;
-            display: none; padding: 16px;
+            position: fixed; 
+            top: 56px; 
+            left: 0; 
+            right: 0; 
+            bottom: 0;
+            z-index: 500; 
+            background: var(--gray-50);
+            overflow-y: auto;
+            display: none; 
+            padding: 20px 16px;
+            animation: panel-in var(--transition-slow) ease;
         }
+        
         .panel.active { display: block; }
+        
+        @keyframes panel-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Cards ===== */
         .card {
-            background: white; border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 16px; margin-bottom: 12px;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid var(--gray-100);
+            transition: all var(--transition);
+        }
+        
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
         }
 
-        /* ===== Welcome overlay ===== */
+        /* ===== Buttons ===== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 48px;
+            transition: all var(--transition);
+            text-decoration: none;
+        }
+        
+        .btn:active { transform: scale(0.98); }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--ocean) 0%, var(--ocean-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(8, 145, 178, 0.35);
+        }
+        
+        .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(8, 145, 178, 0.45);
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(20, 184, 166, 0.45);
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--red) 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+        }
+        
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--gray-200);
+            color: var(--gray-600);
+        }
+        
+        .btn-outline:hover {
+            border-color: var(--ocean);
+            color: var(--ocean);
+            background: rgba(8, 145, 178, 0.05);
+        }
+        
+        .btn-block { width: 100%; }
+        
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            min-height: 36px;
+        }
+
+        /* ===== Form Elements ===== */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+        }
+        
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 1rem;
+            color: var(--gray-800);
+            background: var(--white);
+            transition: all var(--transition);
+        }
+        
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--ocean);
+            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
+        }
+        
+        .form-input::placeholder {
+            color: var(--gray-400);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* ===== Material Tags ===== */
+        .tag-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .tag-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-full);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: var(--white);
+            color: var(--gray-600);
+            text-transform: capitalize;
+            transition: all var(--transition);
+        }
+        
+        .tag-btn:hover {
+            border-color: var(--ocean-light);
+            color: var(--ocean);
+        }
+        
+        .tag-btn.selected {
+            background: linear-gradient(135deg, var(--ocean) 0%, var(--teal) 100%);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+        }
+
+        /* ===== Welcome Screen ===== */
         #welcome {
-            position: fixed; inset: 0; z-index: 2000;
-            background: linear-gradient(150deg, var(--ocean) 0%, #2a9d8f 100%);
-            color: white; overflow-y: auto;
-            display: flex; align-items: center; justify-content: center;
+            position: fixed; 
+            inset: 0; 
+            z-index: 2000;
+            background: linear-gradient(150deg, var(--ocean) 0%, var(--teal) 50%, var(--ocean-dark) 100%);
+            color: white; 
+            overflow-y: auto;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
             padding: 24px;
-            animation: welcome-in 0.4s ease;
+            animation: welcome-fade-in 0.5s ease;
         }
+        
         #welcome.hidden { display: none; }
-        @keyframes welcome-in { from { opacity: 0; } to { opacity: 1; } }
+        
+        @keyframes welcome-fade-in { 
+            from { opacity: 0; } 
+            to { opacity: 1; } 
+        }
 
-        .welcome-inner { max-width: 480px; width: 100%; text-align: center; }
-        .welcome-logo { font-size: 3rem; line-height: 1; }
-        .welcome-title { font-size: 1.9rem; font-weight: 800; margin: 8px 0 4px; }
-        .welcome-tagline { font-size: 1rem; opacity: 0.95; margin-bottom: 6px; }
-        .welcome-place { font-size: 0.85rem; opacity: 0.8; margin-bottom: 24px; }
+        .welcome-inner { 
+            max-width: 440px; 
+            width: 100%; 
+            text-align: center;
+        }
+        
+        .welcome-logo { 
+            font-size: 4rem; 
+            line-height: 1;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        .welcome-title { 
+            font-size: 2.5rem; 
+            font-weight: 800; 
+            margin: 12px 0 8px;
+            letter-spacing: -0.03em;
+        }
+        
+        .welcome-tagline { 
+            font-size: 1.1rem; 
+            opacity: 0.95; 
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        
+        .welcome-place { 
+            font-size: 0.9rem; 
+            opacity: 0.8; 
+            margin-bottom: 32px;
+        }
 
         .welcome-steps {
-            display: flex; flex-direction: column; gap: 12px;
-            text-align: left; margin-bottom: 24px;
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px;
+            text-align: left; 
+            margin-bottom: 28px;
         }
+        
         .welcome-step {
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.18);
-            border-radius: 12px; padding: 14px 16px;
-            display: flex; align-items: flex-start; gap: 14px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius-lg);
+            padding: 16px 18px;
+            display: flex; 
+            align-items: flex-start; 
+            gap: 16px;
+            transition: all var(--transition);
         }
+        
+        .welcome-step:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(4px);
+        }
+        
         .welcome-step .num {
-            flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
-            background: white; color: var(--ocean); font-weight: 800;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.05rem;
+            flex-shrink: 0; 
+            width: 40px; 
+            height: 40px; 
+            border-radius: var(--radius-full);
+            background: white; 
+            color: var(--ocean); 
+            font-weight: 800;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: var(--shadow-md);
         }
-        .welcome-step h3 { font-size: 1rem; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
-        .welcome-step p { font-size: 0.85rem; opacity: 0.9; line-height: 1.35; }
+        
+        .welcome-step h3 { 
+            font-size: 1rem; 
+            font-weight: 700;
+            margin-bottom: 4px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+        }
+        
+        .welcome-step p { 
+            font-size: 0.9rem; 
+            opacity: 0.9; 
+            line-height: 1.5;
+        }
 
         .welcome-legend {
-            display: flex; justify-content: center; gap: 16px;
-            font-size: 0.78rem; margin-bottom: 24px; flex-wrap: wrap;
+            display: flex; 
+            justify-content: center; 
+            gap: 20px;
+            font-size: 0.85rem; 
+            margin-bottom: 28px; 
+            flex-wrap: wrap;
         }
-        .welcome-legend .legend-item { opacity: 0.95; }
+        
+        .welcome-legend .legend-item { 
+            opacity: 0.95;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
         .welcome-cta {
-            width: 100%; padding: 16px; border: none; border-radius: 12px;
-            background: var(--sand); color: #1a1a2e;
-            font-size: 1.15rem; font-weight: 800; cursor: pointer;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            transition: transform 0.1s, box-shadow 0.2s;
+            width: 100%; 
+            padding: 18px 24px; 
+            border: none; 
+            border-radius: var(--radius-lg);
+            background: linear-gradient(135deg, var(--sand) 0%, var(--sand-light) 100%);
+            color: var(--gray-900);
+            font-family: inherit;
+            font-size: 1.15rem; 
+            font-weight: 800; 
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            transition: all var(--transition);
+            letter-spacing: -0.01em;
         }
-        .welcome-cta:hover { box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
-        .welcome-cta:active { transform: scale(0.98); }
+        
+        .welcome-cta:hover { 
+            box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+            transform: translateY(-2px);
+        }
+        
+        .welcome-cta:active { 
+            transform: scale(0.98) translateY(0);
+        }
+        
         .welcome-skip {
-            margin-top: 14px; background: none; border: none;
-            color: rgba(255,255,255,0.85); font-size: 0.85rem;
-            text-decoration: underline; cursor: pointer;
+            margin-top: 16px; 
+            background: none; 
+            border: none;
+            color: rgba(255,255,255,0.85); 
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: underline; 
+            cursor: pointer;
+            transition: all var(--transition);
         }
-        :root { --sand: #e9c46a; }
+        
+        .welcome-skip:hover {
+            color: white;
+        }
+
+        /* ===== Photo Preview ===== */
+        .photo-preview {
+            margin-top: 12px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: none;
+        }
+        
+        .photo-preview.active {
+            display: block;
+        }
+        
+        .photo-preview img {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+        }
+
+        /* ===== GPS Info ===== */
+        .gps-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: var(--gray-100);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            color: var(--gray-600);
+        }
+        
+        .gps-info.has-gps {
+            background: rgba(20, 184, 166, 0.1);
+            color: var(--teal-dark);
+        }
+
+        /* ===== List Item ===== */
+        .report-item {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+        
+        .report-thumb {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: var(--radius);
+            flex-shrink: 0;
+        }
+        
+        .report-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .report-title {
+            font-weight: 600;
+            text-transform: capitalize;
+            color: var(--gray-800);
+            margin-bottom: 4px;
+        }
+        
+        .report-meta {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+
+        /* ===== Auth UI ===== */
+        .auth-form {
+            margin-top: 20px;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        
+        .auth-buttons .btn {
+            flex: 1;
+        }
+        
+        .auth-error {
+            color: var(--red);
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+        
+        .user-info {
+            text-align: center;
+            padding: 20px 0;
+        }
+        
+        .user-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 4px;
+        }
+        
+        .user-email {
+            font-size: 0.9rem;
+            color: var(--gray-500);
+        }
+
+        /* ===== Status Message ===== */
+        .status-msg {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            margin-top: 12px;
+        }
+        
+        .status-msg.success {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--green);
+        }
+        
+        .status-msg.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--red);
+        }
+        
+        .status-msg.loading {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        /* ===== File Input ===== */
+        .file-input-wrapper {
+            position: relative;
+        }
+        
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 24px;
+            border: 2px dashed var(--gray-300);
+            border-radius: var(--radius);
+            background: var(--gray-50);
+            color: var(--gray-600);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        
+        .file-input-btn:hover {
+            border-color: var(--ocean);
+            background: rgba(8, 145, 178, 0.05);
+            color: var(--ocean);
+        }
+        
+        .file-input-btn .icon {
+            font-size: 1.5rem;
+        }
+
+        /* ===== Leaflet Popup Override ===== */
+        .leaflet-popup-content-wrapper {
+            border-radius: var(--radius) !important;
+            box-shadow: var(--shadow-lg) !important;
+        }
+        
+        .leaflet-popup-content {
+            margin: 12px !important;
+        }
+        
+        .popup-content {
+            min-width: 220px;
+            text-align: center;
+        }
+        
+        .popup-img {
+            width: 100%;
+            height: 130px;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+        }
+        
+        .popup-title {
+            font-weight: 700;
+            text-transform: capitalize;
+            margin-bottom: 4px;
+        }
+        
+        .popup-meta {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            margin-bottom: 8px;
+        }
+        
+        .popup-desc {
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        /* ===== Section Heading ===== */
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-count {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--gray-400);
+        }
+
+        /* ===== Responsive ===== */
+        @media (min-width: 640px) {
+            .welcome-inner { max-width: 480px; }
+            .card { max-width: 560px; margin-left: auto; margin-right: auto; }
+        }
     </style>
 </head>
 <body>
-    <!-- ===== Welcome / onboarding overlay ===== -->
+    <!-- ===== Welcome / Onboarding Overlay ===== -->
     <div id="welcome">
         <div class="welcome-inner">
             <div class="welcome-logo">🛶</div>
             <div class="welcome-title">Chicleana</div>
             <div class="welcome-tagline">Entre todos limpiamos la Bahía 🌊</div>
-            <div class="welcome-place">Bahía de Chiclana · Marismas de las Salinas (Cádiz)</div>
+            <div class="welcome-place">Bahía de Chiclana · Marismas de las Salinas · Cádiz</div>
 
             <div class="welcome-steps">
                 <div class="welcome-step">
                     <div class="num">1</div>
                     <div>
                         <h3>📸 Reporta</h3>
-                        <p>¿Ves basura desde el kayak? Hazle una foto. La ubicación GPS se extrae sola y aparece un punto 🔴 en el mapa.</p>
+                        <p>¿Ves basura desde tu kayak? Hazle una foto. La ubicación GPS se extrae automáticamente.</p>
                     </div>
                 </div>
                 <div class="welcome-step">
                     <div class="num">2</div>
                     <div>
-                        <h3>🙋 Reclama y limpia</h3>
-                        <p>Elige un punto del mapa, comprométete a limpiarlo 🟡, recógelo y sube la foto del "después" con tu historia.</p>
+                        <h3>🙋 Reclama</h3>
+                        <p>Elige un punto del mapa y comprométete a limpiarlo. Sube la foto del "después".</p>
                     </div>
                 </div>
                 <div class="welcome-step">
                     <div class="num">3</div>
                     <div>
-                        <h3>✅ Verifica y gana puntos</h3>
-                        <p>La comunidad confirma la limpieza 🟢, sumas puntos y subes en la clasificación. Cada punto cuenta.</p>
+                        <h3>✅ Gana puntos</h3>
+                        <p>La comunidad verifica tu limpieza. Sumas puntos y subes en el ranking.</p>
                     </div>
                 </div>
             </div>
@@ -189,35 +852,47 @@
                 <span class="legend-item">🟢 Limpiado</span>
             </div>
 
-            <button id="welcome-start" class="welcome-cta">Empezar →</button>
-            <br>
-            <button id="welcome-skip" class="welcome-skip">Ver el mapa directamente</button>
+            <button id="welcome-start" class="welcome-cta">Empezar a limpiar →</button>
+            <button id="welcome-skip" class="welcome-skip">Ir directamente al mapa</button>
         </div>
     </div>
 
+    <!-- ===== Header ===== -->
     <div id="header">
-        <h1>🛶 Chicleana</h1>
+        <h1>
+            <span>🛶</span>
+            <span>Chicleana</span>
+        </h1>
         <nav>
-            <button id="nav-map" class="active" title="Map">🗺️</button>
-            <button id="nav-list" title="List">📋</button>
-            <button id="nav-report" title="Report">📸</button>
-            <button id="nav-profile" title="Profile">👤</button>
+            <button id="nav-map" class="nav-btn active" title="Mapa">🗺️</button>
+            <button id="nav-list" class="nav-btn" title="Lista">📋</button>
+            <button id="nav-report" class="nav-btn" title="Reportar">📸</button>
+            <button id="nav-profile" class="nav-btn" title="Perfil">👤</button>
         </nav>
     </div>
 
+    <!-- ===== Map ===== -->
     <div id="map"></div>
 
+    <!-- ===== Legend ===== -->
     <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#e63946;"></div> Open</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> Claimed</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div> Cleaned</div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: linear-gradient(135deg, #ef4444, #dc2626);"></div>
+            <span>Abierto</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: linear-gradient(135deg, #f59e0b, #d97706);"></div>
+            <span>Reclamado</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: linear-gradient(135deg, #22c55e, #16a34a);"></div>
+            <span>Limpiado</span>
+        </div>
     </div>
 
-    <!-- List panel -->
+    <!-- ===== Panels ===== -->
     <div id="panel-list" class="panel"></div>
-    <!-- Report panel -->
     <div id="panel-report" class="panel"></div>
-    <!-- Profile panel -->
     <div id="panel-profile" class="panel"></div>
 
     <script>
@@ -238,47 +913,66 @@
         { id:'13', lat:36.400114, lng:-6.210680, status:'open', trashType:'fishing_gear', severity:'medium', photoUrl:'photos/20260806_122709.jpg', description:'Fishing line and bait containers left behind', reporterName:'Karoly', date:'2026-08-06' }
     ];
 
-    var PIN_COLORS = { open:'#e63946', claimed:'#f59e0b', cleaned:'#22c55e' };
+    var PIN_COLORS = { 
+        open: '#ef4444', 
+        claimed: '#f59e0b', 
+        cleaned: '#22c55e' 
+    };
 
     // ========== WELCOME OVERLAY ==========
     var welcomeEl = document.getElementById('welcome');
+    
     function dismissWelcome() {
         welcomeEl.classList.add('hidden');
         try { localStorage.setItem('chicleana_welcomed', '1'); } catch(e) {}
-        // Map was hidden behind the overlay — fix Leaflet tile sizing
-        setTimeout(function(){ if (window.map) window.map.invalidateSize(); }, 50);
+        setTimeout(function(){ if (window.map) window.map.invalidateSize(); }, 100);
     }
-    function showWelcome() { welcomeEl.classList.remove('hidden'); }
+    
+    function showWelcome() { 
+        welcomeEl.classList.remove('hidden'); 
+    }
+    
     // Skip on return visits
-    try { if (localStorage.getItem('chicleana_welcomed') === '1') welcomeEl.classList.add('hidden'); } catch(e) {}
+    try { 
+        if (localStorage.getItem('chicleana_welcomed') === '1') {
+            welcomeEl.classList.add('hidden'); 
+        }
+    } catch(e) {}
+    
     document.getElementById('welcome-start').onclick = dismissWelcome;
     document.getElementById('welcome-skip').onclick = dismissWelcome;
 
     // ========== MAP ==========
     var map = L.map('map').setView([36.402, -6.200], 15);
     window.map = map;
+    
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution:'&copy; OSM', maxZoom:19
+        attribution:'© OpenStreetMap', 
+        maxZoom: 19
     }).addTo(map);
 
     reports.forEach(function(r) {
         var marker = L.circleMarker([r.lat, r.lng], {
-            radius: 12, fillColor: PIN_COLORS[r.status], color:'#fff', weight:2, opacity:1, fillOpacity:0.85
+            radius: 14, 
+            fillColor: PIN_COLORS[r.status], 
+            color: '#fff', 
+            weight: 3, 
+            opacity: 1, 
+            fillOpacity: 0.9
         }).addTo(map);
 
-        var popup = '<div style="min-width:200px;text-align:center;">' +
-            '<img src="'+r.photoUrl+'" style="width:100%;height:120px;object-fit:cover;border-radius:6px;margin-bottom:8px;" onerror="this.style.display=\'none\'">' +
-            '<div style="font-weight:700;text-transform:capitalize;">'+r.trashType.replace(/_/g,' ')+'</div>' +
-            '<div style="font-size:0.8rem;color:#636e72;">Severity: '+r.severity+' · '+r.date+'</div>' +
-            '<div style="font-size:0.8rem;color:#636e72;">By: '+r.reporterName+'</div>' +
+        var popup = '<div class="popup-content">' +
+            '<img src="'+r.photoUrl+'" class="popup-img" onerror="this.style.display=\'none\'">' +
+            '<div class="popup-title">'+r.trashType.replace(/_/g,' ')+'</div>' +
+            '<div class="popup-meta">'+r.severity+' · '+r.date+' · '+r.reporterName+'</div>' +
             '<span class="status-badge status-'+r.status+'">'+r.status+'</span>' +
-            '<p style="font-size:0.8rem;margin-top:6px;">'+r.description+'</p></div>';
+            '<p class="popup-desc">'+r.description+'</p></div>';
 
-        marker.bindPopup(popup, {maxWidth:250});
+        marker.bindPopup(popup, {maxWidth: 280});
         marker.on('mouseover', function(){ this.openPopup(); });
     });
 
-    // ========== NAV ==========
+    // ========== NAVIGATION ==========
     var navMap = document.getElementById('nav-map');
     var navList = document.getElementById('nav-list');
     var navReport = document.getElementById('nav-report');
@@ -291,75 +985,113 @@
         allNavBtns.forEach(function(b){ b.classList.remove('active'); });
     }
 
-    navMap.onclick = function(){ hideAllPanels(); navMap.classList.add('active'); };
-    navList.onclick = function(){ hideAllPanels(); navList.classList.add('active'); document.getElementById('panel-list').classList.add('active'); renderList(); };
-    navReport.onclick = function(){ hideAllPanels(); navReport.classList.add('active'); document.getElementById('panel-report').classList.add('active'); };
-    navProfile.onclick = function(){ hideAllPanels(); navProfile.classList.add('active'); document.getElementById('panel-profile').classList.add('active'); };
+    navMap.onclick = function(){ 
+        hideAllPanels(); 
+        navMap.classList.add('active'); 
+    };
+    
+    navList.onclick = function(){ 
+        hideAllPanels(); 
+        navList.classList.add('active'); 
+        document.getElementById('panel-list').classList.add('active'); 
+        renderList(); 
+    };
+    
+    navReport.onclick = function(){ 
+        hideAllPanels(); 
+        navReport.classList.add('active'); 
+        document.getElementById('panel-report').classList.add('active'); 
+    };
+    
+    navProfile.onclick = function(){ 
+        hideAllPanels(); 
+        navProfile.classList.add('active'); 
+        document.getElementById('panel-profile').classList.add('active'); 
+    };
 
-    // ========== LIST ==========
+    // ========== LIST VIEW ==========
     function renderList() {
-        var html = '<h3 style="margin-bottom:12px;">All Reports ('+reports.length+')</h3>';
+        var html = '<h3 class="section-title">📋 Todos los reportes <span class="section-count">('+reports.length+')</span></h3>';
         reports.forEach(function(r){
-            html += '<div class="card" style="display:flex;gap:12px;align-items:center;">' +
-                '<img src="'+r.photoUrl+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" onerror="this.style.display=\'none\'">' +
-                '<div style="flex:1;"><div style="font-weight:600;text-transform:capitalize;">'+r.trashType.replace(/_/g,' ')+'</div>' +
-                '<div style="font-size:0.8rem;color:#636e72;">'+r.severity+' · '+r.date+'</div></div>' +
-                '<span class="status-badge status-'+r.status+'">'+r.status+'</span></div>';
+            html += '<div class="card"><div class="report-item">' +
+                '<img src="'+r.photoUrl+'" class="report-thumb" onerror="this.style.display=\'none\'">' +
+                '<div class="report-info">' +
+                '<div class="report-title">'+r.trashType.replace(/_/g,' ')+'</div>' +
+                '<div class="report-meta">'+r.severity+' · '+r.date+'</div></div>' +
+                '<span class="status-badge status-'+r.status+'">'+r.status+'</span></div></div>';
         });
         document.getElementById('panel-list').innerHTML = html;
     }
 
-    // ========== PLACEHOLDERS ==========
-    // Report form
+    // ========== REPORT FORM ==========
     document.getElementById('panel-report').innerHTML = `
-        <div class="card" style="max-width:500px;margin:0 auto;">
-            <h2 style="margin-bottom:16px;">📸 Report Trash</h2>
+        <div class="card">
+            <h2 class="section-title">📸 Reportar basura</h2>
             <div id="report-auth-gate"></div>
             <form id="report-form" style="display:none;">
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:0.85rem;font-weight:600;">Photo *</label><br>
-                    <input type="file" id="rpt-photo" accept="image/jpeg,image/png" capture="environment" style="margin-top:4px;">
-                    <div id="rpt-preview" style="margin-top:8px;display:none;"><img id="rpt-preview-img" style="width:100%;max-height:180px;object-fit:cover;border-radius:6px;"></div>
+                <div class="form-group">
+                    <label class="form-label">Foto *</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="rpt-photo" class="file-input" accept="image/jpeg,image/png" capture="environment">
+                        <div class="file-input-btn">
+                            <span class="icon">📷</span>
+                            <span>Toca para añadir foto</span>
+                        </div>
+                    </div>
+                    <div id="rpt-preview" class="photo-preview">
+                        <img id="rpt-preview-img">
+                    </div>
                 </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:0.85rem;font-weight:600;">Materials *</label><br>
-                    <div id="material-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+                
+                <div class="form-group">
+                    <label class="form-label">Materiales *</label>
+                    <div id="material-tags" class="tag-grid"></div>
                 </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:0.85rem;font-weight:600;">Severity</label><br>
-                    <select id="rpt-severity" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-top:4px;">
-                        <option value="small">🟢 Small (fits in bag)</option>
-                        <option value="medium">🟡 Medium (needs boat)</option>
-                        <option value="large">🔴 Large (needs help)</option>
+                
+                <div class="form-group">
+                    <label class="form-label">Gravedad</label>
+                    <select id="rpt-severity" class="form-select">
+                        <option value="small">🟢 Pequeño (cabe en una bolsa)</option>
+                        <option value="medium">🟡 Mediano (necesita bote)</option>
+                        <option value="large">🔴 Grande (necesita ayuda)</option>
                     </select>
                 </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:0.85rem;font-weight:600;">Description</label><br>
-                    <textarea id="rpt-desc" rows="3" placeholder="What did you see?" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-top:4px;"></textarea>
+                
+                <div class="form-group">
+                    <label class="form-label">Descripción</label>
+                    <textarea id="rpt-desc" class="form-textarea" rows="3" placeholder="¿Qué has visto?"></textarea>
                 </div>
-                <div id="rpt-gps-info" style="font-size:0.8rem;color:#636e72;margin-bottom:12px;">📍 GPS: will extract from photo</div>
-                <button type="submit" style="width:100%;padding:12px;background:#2a9d8f;color:white;border:none;border-radius:6px;font-size:1rem;font-weight:600;cursor:pointer;">✅ Submit Report</button>
-                <div id="rpt-status" style="margin-top:8px;font-size:0.85rem;"></div>
+                
+                <div id="rpt-gps-info" class="gps-info">
+                    📍 GPS: se extraerá de la foto
+                </div>
+                
+                <button type="submit" class="btn btn-success btn-block" style="margin-top: 20px;">
+                    ✅ Enviar reporte
+                </button>
+                
+                <div id="rpt-status"></div>
             </form>
         </div>
     `;
 
     // Material tags
-    var MATERIALS = ['plastic','metal','glass','styrofoam','organic','hazardous','fabric','mixed'];
+    var MATERIALS = ['plástico', 'metal', 'vidrio', 'poliespán', 'orgánico', 'peligroso', 'tela', 'mixto'];
     var selectedMaterials = [];
     var tagsContainer = document.getElementById('material-tags');
+    
     MATERIALS.forEach(function(m){
         var btn = document.createElement('button');
         btn.type = 'button';
+        btn.className = 'tag-btn';
         btn.textContent = m;
-        btn.style.cssText = 'padding:6px 12px;border:2px solid #ddd;border-radius:20px;font-size:0.8rem;cursor:pointer;background:white;text-transform:capitalize;';
         btn.onclick = function(){
             if(selectedMaterials.includes(m)){
                 selectedMaterials = selectedMaterials.filter(function(x){return x!==m;});
-                btn.style.background = 'white'; btn.style.borderColor = '#ddd'; btn.style.color = '#333';
+                btn.classList.remove('selected');
             } else {
                 selectedMaterials.push(m);
-                btn.style.background = '#0077b6'; btn.style.borderColor = '#0077b6'; btn.style.color = 'white';
+                btn.classList.add('selected');
             }
         };
         tagsContainer.appendChild(btn);
@@ -370,12 +1102,14 @@
     document.getElementById('rpt-photo').onchange = function(e){
         var file = e.target.files[0];
         if(!file) return;
+        
         var reader = new FileReader();
         reader.onload = function(ev){
             document.getElementById('rpt-preview-img').src = ev.target.result;
-            document.getElementById('rpt-preview').style.display = 'block';
+            document.getElementById('rpt-preview').classList.add('active');
         };
         reader.readAsDataURL(file);
+        
         // Extract GPS via EXIF
         if(window.EXIF){
             EXIF.getData(file, function(){
@@ -389,20 +1123,26 @@
                     if(latRef==='S') latDec=-latDec;
                     if(lngRef==='W') lngDec=-lngDec;
                     reportGPS = {lat:latDec, lng:lngDec};
-                    document.getElementById('rpt-gps-info').innerHTML = '📍 GPS: <strong>'+latDec.toFixed(5)+', '+lngDec.toFixed(5)+'</strong>';
+                    var gpsEl = document.getElementById('rpt-gps-info');
+                    gpsEl.innerHTML = '📍 GPS: <strong>'+latDec.toFixed(5)+', '+lngDec.toFixed(5)+'</strong>';
+                    gpsEl.classList.add('has-gps');
                 } else {
-                    document.getElementById('rpt-gps-info').textContent = '⚠️ No GPS in photo — tap map to set location manually';
+                    document.getElementById('rpt-gps-info').textContent = '⚠️ Sin GPS en la foto — toca el mapa para ubicar';
                 }
             });
         }
     };
 
-    // Profile/Auth panel
+    // ========== PROFILE / AUTH ==========
     document.getElementById('panel-profile').innerHTML = `
-        <div class="card" style="max-width:400px;margin:0 auto;text-align:center;">
-            <h2>👤 Account</h2>
+        <div class="card">
+            <h2 class="section-title">👤 Tu cuenta</h2>
             <div id="auth-ui"></div>
-            <button id="show-intro-btn" style="margin-top:20px;background:none;border:none;color:#0077b6;font-size:0.85rem;text-decoration:underline;cursor:pointer;">Ver la introducción otra vez</button>
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--gray-200); text-align: center;">
+                <button id="show-intro-btn" class="btn btn-outline btn-sm">
+                    Ver la introducción otra vez
+                </button>
+            </div>
         </div>
     `;
     document.getElementById('show-intro-btn').onclick = showWelcome;
@@ -427,19 +1167,36 @@
     function renderAuthUI(){
         var el = document.getElementById('auth-ui');
         if(currentUser){
-            el.innerHTML = '<p style="margin:12px 0;">Logged in as <strong>'+currentUser.displayName+'</strong></p><p style="color:#636e72;font-size:0.85rem;">'+currentUser.email+'</p><button id="logout-btn" style="margin-top:16px;padding:10px 20px;background:#e63946;color:white;border:none;border-radius:6px;cursor:pointer;">Log out</button>';
-            document.getElementById('logout-btn').onclick = function(){ window.FB.signOut(window.FB.auth); };
+            el.innerHTML = `
+                <div class="user-info">
+                    <div class="user-name">${currentUser.displayName || 'Usuario'}</div>
+                    <div class="user-email">${currentUser.email}</div>
+                </div>
+                <button id="logout-btn" class="btn btn-danger btn-block">Cerrar sesión</button>
+            `;
+            document.getElementById('logout-btn').onclick = function(){ 
+                window.FB.signOut(window.FB.auth); 
+            };
         } else {
             el.innerHTML = `
-                <div style="margin-top:16px;text-align:left;">
-                    <input id="auth-name" type="text" placeholder="Display name" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px;">
-                    <input id="auth-email" type="email" placeholder="Email" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px;">
-                    <input id="auth-pass" type="password" placeholder="Password (min 6)" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;margin-bottom:12px;">
-                    <button id="btn-register" style="width:48%;padding:10px;background:#0077b6;color:white;border:none;border-radius:6px;cursor:pointer;">Register</button>
-                    <button id="btn-login" style="width:48%;padding:10px;background:#2a9d8f;color:white;border:none;border-radius:6px;cursor:pointer;margin-left:4%;">Login</button>
-                    <p id="auth-error" style="color:#e63946;font-size:0.8rem;margin-top:8px;"></p>
+                <div class="auth-form">
+                    <div class="form-group">
+                        <input id="auth-name" type="text" class="form-input" placeholder="Nombre">
+                    </div>
+                    <div class="form-group">
+                        <input id="auth-email" type="email" class="form-input" placeholder="Email">
+                    </div>
+                    <div class="form-group">
+                        <input id="auth-pass" type="password" class="form-input" placeholder="Contraseña (mín. 6 caracteres)">
+                    </div>
+                    <div class="auth-buttons">
+                        <button id="btn-register" type="button" class="btn btn-primary">Registrarse</button>
+                        <button id="btn-login" type="button" class="btn btn-success">Entrar</button>
+                    </div>
+                    <p id="auth-error" class="auth-error"></p>
                 </div>
             `;
+            
             document.getElementById('btn-register').onclick = async function(){
                 var name = document.getElementById('auth-name').value.trim();
                 var email = document.getElementById('auth-email').value.trim();
@@ -447,19 +1204,23 @@
                 try{
                     var cred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
                     await window.FB.updateProfile(cred.user, {displayName: name});
-                    // Force re-render with updated name
                     currentUser = cred.user;
                     renderAuthUI();
                     document.getElementById('auth-error').textContent = '';
-                }catch(e){ document.getElementById('auth-error').textContent = e.message; }
+                }catch(e){ 
+                    document.getElementById('auth-error').textContent = e.message; 
+                }
             };
+            
             document.getElementById('btn-login').onclick = async function(){
                 var email = document.getElementById('auth-email').value.trim();
                 var pass = document.getElementById('auth-pass').value;
                 try{
                     await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
                     document.getElementById('auth-error').textContent = '';
-                }catch(e){ document.getElementById('auth-error').textContent = e.message; }
+                }catch(e){ 
+                    document.getElementById('auth-error').textContent = e.message; 
+                }
             };
         }
     }
@@ -471,7 +1232,7 @@
             gate.style.display = 'none';
             form.style.display = 'block';
         } else {
-            gate.innerHTML = '<p style="color:#636e72;">Please <strong>log in</strong> (👤 tab) to submit reports.</p>';
+            gate.innerHTML = '<div class="gps-info" style="margin-bottom: 16px;">🔐 Inicia sesión (pestaña 👤) para enviar reportes.</div>';
             gate.style.display = 'block';
             form.style.display = 'none';
         }
@@ -480,15 +1241,15 @@
     // ========== REPORT SUBMISSION ==========
     document.getElementById('report-form').onsubmit = async function(e){
         e.preventDefault();
-        if(!currentUser){ alert('Please log in first.'); return; }
-        if(!reportGPS){ alert('No GPS location. Upload a photo with GPS or set manually.'); return; }
-        if(selectedMaterials.length===0){ alert('Please select at least one material type.'); return; }
+        if(!currentUser){ alert('Por favor, inicia sesión primero.'); return; }
+        if(!reportGPS){ alert('Sin ubicación GPS. Sube una foto con GPS o selecciona manualmente.'); return; }
+        if(selectedMaterials.length===0){ alert('Por favor, selecciona al menos un tipo de material.'); return; }
 
         var file = document.getElementById('rpt-photo').files[0];
-        if(!file){ alert('Please add a photo.'); return; }
+        if(!file){ alert('Por favor, añade una foto.'); return; }
 
         var statusEl = document.getElementById('rpt-status');
-        statusEl.textContent = '⏳ Uploading...';
+        statusEl.innerHTML = '<div class="status-msg loading">⏳ Subiendo...</div>';
 
         try{
             var FB = window.FB;
@@ -514,19 +1275,22 @@
                 createdAt: FB.serverTimestamp()
             });
 
-            statusEl.innerHTML = '<span style="color:#2a9d8f;">✅ Report submitted!</span>';
+            statusEl.innerHTML = '<div class="status-msg success">✅ ¡Reporte enviado!</div>';
+            
             // Reset form
             document.getElementById('report-form').reset();
-            document.getElementById('rpt-preview').style.display='none';
+            document.getElementById('rpt-preview').classList.remove('active');
+            document.getElementById('rpt-gps-info').textContent = '📍 GPS: se extraerá de la foto';
+            document.getElementById('rpt-gps-info').classList.remove('has-gps');
             reportGPS = null;
             selectedMaterials = [];
-            document.querySelectorAll('#material-tags button').forEach(function(b){ b.style.background='white'; b.style.borderColor='#ddd'; b.style.color='#333'; });
-            document.getElementById('rpt-gps-info').textContent = '📍 GPS: will extract from photo';
+            document.querySelectorAll('#material-tags button').forEach(function(b){ 
+                b.classList.remove('selected'); 
+            });
         }catch(err){
-            statusEl.innerHTML = '<span style="color:#e63946;">❌ '+err.message+'</span>';
+            statusEl.innerHTML = '<div class="status-msg error">❌ '+err.message+'</div>';
         }
     };
-
     </script>
     <!-- EXIF.js for GPS extraction -->
     <script src="https://cdn.jsdelivr.net/npm/exif-js@2.3.0/exif.min.js"></script>
