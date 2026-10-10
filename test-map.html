@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; }
+        #map { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        var map = L.map('map').setView([36.4098, -6.1461], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OSM'
+        }).addTo(map);
+        L.circleMarker([36.4098, -6.1461], {radius: 10, fillColor: 'red', color: '#fff', weight: 2, fillOpacity: 0.85}).addTo(map);
+        L.circleMarker([36.4120, -6.1430], {radius: 10, fillColor: 'orange', color: '#fff', weight: 2, fillOpacity: 0.85}).addTo(map);
+        L.circleMarker([36.4075, -6.1500], {radius: 10, fillColor: 'green', color: '#fff', weight: 2, fillOpacity: 0.85}).addTo(map);
+    </script>
+</body>
+</html>

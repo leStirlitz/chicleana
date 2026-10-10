@@ -1,0 +1,321 @@
+/* Chicleana — Mobile-first styles */
+:root {
+    --ocean: #0077b6;
+    --ocean-dark: #005f8a;
+    --sand: #e9c46a;
+    --eco: #2a9d8f;
+    --eco-dark: #1f7a6f;
+    --alert: #e63946;
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --text: #2d3436;
+    --text-light: #636e72;
+    --border: #dfe6e9;
+    --pin-open: #e63946;
+    --pin-claimed: #f59e0b;
+    --pin-cleaned: #22c55e;
+    --radius: 8px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow: hidden;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+}
+
+/* Header */
+#app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--ocean);
+    color: white;
+    z-index: 1000;
+}
+
+#app-header h1 {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+#main-nav {
+    display: flex;
+    gap: 4px;
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.3rem;
+    padding: 8px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: opacity 0.2s, background 0.2s;
+}
+
+.nav-btn.active, .nav-btn:hover {
+    opacity: 1;
+    background: rgba(255,255,255,0.15);
+}
+
+/* Main content */
+#main-content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.view {
+    display: none;
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+}
+
+.view.active {
+    display: block;
+}
+
+#view-map {
+    position: absolute;
+    inset: 0;
+}
+
+/* Map */
+#map-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* Toast */
+#toast-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--text);
+    color: white;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    box-shadow: var(--shadow);
+    animation: toast-in 0.3s ease;
+    pointer-events: auto;
+}
+
+.toast.error { background: var(--alert); }
+.toast.success { background: var(--eco); }
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    background: var(--surface);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 44px;
+    min-width: 44px;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+    background: var(--ocean);
+    color: white;
+}
+
+.btn-primary:hover { background: var(--ocean-dark); }
+
+.btn-success {
+    background: var(--eco);
+    color: white;
+}
+
+.btn-success:hover { background: var(--eco-dark); }
+
+.btn-danger {
+    background: var(--alert);
+    color: white;
+}
+
+.btn-block { width: 100%; }
+
+/* Card */
+.card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-open { background: var(--pin-open); color: white; }
+.status-claimed { background: var(--pin-claimed); color: #1a1a2e; }
+.status-cleaned { background: var(--pin-cleaned); color: white; }
+
+/* Responsive */
+@media (min-width: 768px) {
+    #app-header { padding: 12px 24px; }
+    #app-header h1 { font-size: 1.4rem; }
+
+    .card { max-width: 600px; margin-left: auto; margin-right: auto; }
+}
+
+@media (min-width: 1024px) {
+    #main-content { max-width: 1200px; margin: 0 auto; }
+}
+
+/* Leaflet popup overrides */
+.leaflet-popup-content { margin: 10px; }
+.leaflet-popup-content-wrapper { border-radius: 8px; }
+
+/* List view scrollable */
+#view-list { padding-bottom: 20px; }
+#report-list { padding: 0 8px; }
+
+/* Auth view centered */
+#view-auth {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--ocean) 0%, var(--eco) 100%);
+}
+#view-auth.active { display: flex; }
+
+/* Report form view */
+#view-report { padding: 0 8px; }
+
+/* Detail view */
+#view-detail { padding: 0 8px; }
+
+/* Profile view */
+#view-profile { padding: 0 8px; }
+
+/* Photo input styling */
+input[type="file"] { display: none; }
+
+/* Smooth transitions between views */
+.view { transition: opacity 0.2s ease; }
+
+/* Legend / info bar on map */
+.map-legend {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(255,255,255,0.95);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    z-index: 800;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+/* Loading spinner */
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--ocean);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

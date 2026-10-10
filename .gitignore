@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Photos (local test data, not in repo)
+photos/
+
+# Test artifacts
+tests/__pycache__/
+*.pyc
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local

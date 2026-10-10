@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chicleana — Limpia tu Bahía</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy, serverTimestamp, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+        import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmjoLEbko7ILvhlJdMz-gqmAHJvJkw2O0",
+            authDomain: "chicleana.firebaseapp.com",
+            projectId: "chicleana",
+            storageBucket: "chicleana.firebasestorage.app",
+            messagingSenderId: "505940611499",
+            appId: "1:505940611499:web:262201f04e884453b2c2ee"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // Expose to global scope for inline scripts
+        window.FB = { auth, db, storage, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, collection, addDoc, getDocs, doc, updateDoc, query, orderBy, serverTimestamp, where, ref, uploadBytes, getDownloadURL };
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+    <style>
+        :root {
+            --ocean: #0077b6;
+            --pin-open: #e63946;
+            --pin-claimed: #f59e0b;
+            --pin-cleaned: #22c55e;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+        #header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: var(--ocean); color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 16px; height: 48px;
+        }
+        #header h1 { font-size: 1.2rem; }
+        #header nav { display: flex; gap: 4px; }
+        #header nav button {
+            background: transparent; border: none; color: white;
+            font-size: 1.3rem; padding: 8px; border-radius: 6px;
+            cursor: pointer; min-width: 44px; min-height: 44px;
+            opacity: 0.7; transition: opacity 0.2s;
+        }
+        #header nav button.active, #header nav button:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+
+        #map { position: fixed; top: 48px; left: 0; right: 0; bottom: 0; z-index: 1; }
+
+        .legend {
+            position: fixed; bottom: 12px; left: 12px; z-index: 999;
+            background: rgba(255,255,255,0.95); border-radius: 6px;
+            padding: 8px 12px; font-size: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            display: flex; gap: 12px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        .status-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 12px;
+            font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        }
+        .status-open { background: var(--pin-open); color: white; }
+        .status-claimed { background: var(--pin-claimed); color: #1a1a2e; }
+        .status-cleaned { background: var(--pin-cleaned); color: white; }
+
+        /* Panels that overlay the map */
+        .panel {
+            position: fixed; top: 48px; left: 0; right: 0; bottom: 0;
+            z-index: 500; background: #f8f9fa; overflow-y: auto;
+            display: none; padding: 16px;
+        }
+        .panel.active { display: block; }
+        .card {
+            background: white; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 16px; margin-bottom: 12px;
+        }
+
+        /* ===== Welcome overlay ===== */
+        #welcome {
+            position: fixed; inset: 0; z-index: 2000;
+            background: linear-gradient(150deg, var(--ocean) 0%, #2a9d8f 100%);
+            color: white; overflow-y: auto;
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+            animation: welcome-in 0.4s ease;
+        }
+        #welcome.hidden { display: none; }
+        @keyframes welcome-in { from { opacity: 0; } to { opacity: 1; } }
+
+        .welcome-inner { max-width: 480px; width: 100%; text-align: center; }
+        .welcome-logo { font-size: 3rem; line-height: 1; }
+        .welcome-title { font-size: 1.9rem; font-weight: 800; margin: 8px 0 4px; }
+        .welcome-tagline { font-size: 1rem; opacity: 0.95; margin-bottom: 6px; }
+        .welcome-place { font-size: 0.85rem; opacity: 0.8; margin-bottom: 24px; }
+
+        .welcome-steps {
+            display: flex; flex-direction: column; gap: 12px;
+            text-align: left; margin-bottom: 24px;
+        }
+        .welcome-step {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 12px; padding: 14px 16px;
+            display: flex; align-items: flex-start; gap: 14px;
+        }
+        .welcome-step .num {
+            flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+            background: white; color: var(--ocean); font-weight: 800;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.05rem;
+        }
+        .welcome-step h3 { font-size: 1rem; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+        .welcome-step p { font-size: 0.85rem; opacity: 0.9; line-height: 1.35; }
+
+        .welcome-legend {
+            display: flex; justify-content: center; gap: 16px;
+            font-size: 0.78rem; margin-bottom: 24px; flex-wrap: wrap;
+        }
+        .welcome-legend .legend-item { opacity: 0.95; }
+
+        .welcome-cta {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            background: var(--sand); color: #1a1a2e;
+            font-size: 1.15rem; font-weight: 800; cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .welcome-cta:hover { box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
+        .welcome-cta:active { transform: scale(0.98); }
+        .welcome-skip {
+            margin-top: 14px; background: none; border: none;
+            color: rgba(255,255,255,0.85); font-size: 0.85rem;
+            text-decoration: underline; cursor: pointer;
+        }
+        :root { --sand: #e9c46a; }
+    </style>
+</head>
+<body>
+    <!-- ===== Welcome / onboarding overlay ===== -->
+    <div id="welcome">
+        <div class="welcome-inner">
+            <div class="welcome-logo">🛶</div>
+            <div class="welcome-title">Chicleana</div>
+            <div class="welcome-tagline">Entre todos limpiamos la Bahía 🌊</div>
+            <div class="welcome-place">Bahía de Chiclana · Marismas de las Salinas (Cádiz)</div>
+
+            <div class="welcome-steps">
+                <div class="welcome-step">
+                    <div class="num">1</div>
+                    <div>
+                        <h3>📸 Reporta</h3>
+                        <p>¿Ves basura desde el kayak? Hazle una foto. La ubicación GPS se extrae sola y aparece un punto 🔴 en el mapa.</p>
+                    </div>
+                </div>
+                <div class="welcome-step">
+                    <div class="num">2</div>
+                    <div>
+                        <h3>🙋 Reclama y limpia</h3>
+                        <p>Elige un punto del mapa, comprométete a limpiarlo 🟡, recógelo y sube la foto del "después" con tu historia.</p>
+                    </div>
+                </div>
+                <div class="welcome-step">
+                    <div class="num">3</div>
+                    <div>
+                        <h3>✅ Verifica y gana puntos</h3>
+                        <p>La comunidad confirma la limpieza 🟢, sumas puntos y subes en la clasificación. Cada punto cuenta.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="welcome-legend">
+                <span class="legend-item">🔴 Sin reclamar</span>
+                <span class="legend-item">🟡 Reclamado</span>
+                <span class="legend-item">🟢 Limpiado</span>
+            </div>
+
+            <button id="welcome-start" class="welcome-cta">Empezar →</button>
+            <br>
+            <button id="welcome-skip" class="welcome-skip">Ver el mapa directamente</button>
+        </div>
+    </div>
+
+    <div id="header">
+        <h1>🛶 Chicleana</h1>
+        <nav>
+            <button id="nav-map" class="active" title="Map">🗺️</button>
+            <button id="nav-list" title="List">📋</button>
+            <button id="nav-report" title="Report">📸</button>
+            <button id="nav-profile" title="Profile">👤</button>
+        </nav>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#e63946;"></div> Open</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> Claimed</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div> Cleaned</div>
+    </div>
+
+    <!-- List panel -->
+    <div id="panel-list" class="panel"></div>
+    <!-- Report panel -->
+    <div id="panel-report" class="panel"></div>
+    <!-- Profile panel -->
+    <div id="panel-profile" class="panel"></div>
+
+    <script>
+    // ========== DATA ==========
+    var reports = [
+        { id:'1', lat:36.397014, lng:-6.204619, status:'open', trashType:'plastic_bottles', severity:'small', photoUrl:'photos/20260806_111611.jpg', description:'Plastic bottles and wrappers on the bank near launch point', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'2', lat:36.398215, lng:-6.198826, status:'open', trashType:'beer_cans', severity:'small', photoUrl:'photos/20260806_112515.jpg', description:'Beer cans stuck in the reeds along the channel', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'3', lat:36.398832, lng:-6.199191, status:'open', trashType:'mixed_other', severity:'medium', photoUrl:'photos/20260806_112806.jpg', description:'Mixed debris — bags, cans, old rope caught on branches', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'4', lat:36.400144, lng:-6.200891, status:'open', trashType:'cooler_box', severity:'medium', photoUrl:'photos/20260806_113124.jpg', description:'Abandoned cooler box half-submerged in mud', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'5', lat:36.401679, lng:-6.200269, status:'open', trashType:'fishing_gear', severity:'large', photoUrl:'photos/20260806_113423.jpg', description:'Old fishing nets and line tangled in the seagrass', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'6', lat:36.406486, lng:-6.196982, status:'claimed', trashType:'plastic_bottles', severity:'small', photoUrl:'photos/20260806_114833.jpg', description:'Plastic bottles wedged between rocks', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'7', lat:36.406757, lng:-6.196215, status:'open', trashType:'mixed_other', severity:'medium', photoUrl:'photos/20260806_115100.jpg', description:'Assorted trash washed up on small island shore', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'8', lat:36.406808, lng:-6.195377, status:'open', trashType:'chair', severity:'large', photoUrl:'photos/20260806_115227.jpg', description:'Broken chair dumped near the water edge', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'9', lat:36.406910, lng:-6.194998, status:'claimed', trashType:'beer_cans', severity:'small', photoUrl:'photos/20260806_115333.jpg', description:'Beer cans and snack wrappers at fishing spot', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'10', lat:36.406698, lng:-6.194777, status:'cleaned', trashType:'plastic_bottles', severity:'small', photoUrl:'photos/20260806_115608.jpg', description:'Collected and removed — 3 bags of bottles', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'11', lat:36.407000, lng:-6.200235, status:'open', trashType:'boat_kayak', severity:'large', photoUrl:'photos/20260806_120538.jpg', description:'Abandoned old boat frame rotting in the marsh', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'12', lat:36.402522, lng:-6.212348, status:'open', trashType:'mixed_other', severity:'medium', photoUrl:'photos/20260806_122213.jpg', description:'Trash accumulation at the channel bend', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'13', lat:36.400114, lng:-6.210680, status:'open', trashType:'fishing_gear', severity:'medium', photoUrl:'photos/20260806_122709.jpg', description:'Fishing line and bait containers left behind', reporterName:'Karoly', date:'2026-08-06' }
+    ];
+
+    var PIN_COLORS = { open:'#e63946', claimed:'#f59e0b', cleaned:'#22c55e' };
+
+    // ========== WELCOME OVERLAY ==========
+    var welcomeEl = document.getElementById('welcome');
+    function dismissWelcome() {
+        welcomeEl.classList.add('hidden');
+        try { localStorage.setItem('chicleana_welcomed', '1'); } catch(e) {}
+        // Map was hidden behind the overlay — fix Leaflet tile sizing
+        setTimeout(function(){ if (window.map) window.map.invalidateSize(); }, 50);
+    }
+    function showWelcome() { welcomeEl.classList.remove('hidden'); }
+    // Skip on return visits
+    try { if (localStorage.getItem('chicleana_welcomed') === '1') welcomeEl.classList.add('hidden'); } catch(e) {}
+    document.getElementById('welcome-start').onclick = dismissWelcome;
+    document.getElementById('welcome-skip').onclick = dismissWelcome;
+
+    // ========== MAP ==========
+    var map = L.map('map').setView([36.402, -6.200], 15);
+    window.map = map;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution:'&copy; OSM', maxZoom:19
+    }).addTo(map);
+
+    reports.forEach(function(r) {
+        var marker = L.circleMarker([r.lat, r.lng], {
+            radius: 12, fillColor: PIN_COLORS[r.status], color:'#fff', weight:2, opacity:1, fillOpacity:0.85
+        }).addTo(map);
+
+        var popup = '<div style="min-width:200px;text-align:center;">' +
+            '<img src="'+r.photoUrl+'" style="width:100%;height:120px;object-fit:cover;border-radius:6px;margin-bottom:8px;" onerror="this.style.display=\'none\'">' +
+            '<div style="font-weight:700;text-transform:capitalize;">'+r.trashType.replace(/_/g,' ')+'</div>' +
+            '<div style="font-size:0.8rem;color:#636e72;">Severity: '+r.severity+' · '+r.date+'</div>' +
+            '<div style="font-size:0.8rem;color:#636e72;">By: '+r.reporterName+'</div>' +
+            '<span class="status-badge status-'+r.status+'">'+r.status+'</span>' +
+            '<p style="font-size:0.8rem;margin-top:6px;">'+r.description+'</p></div>';
+
+        marker.bindPopup(popup, {maxWidth:250});
+        marker.on('mouseover', function(){ this.openPopup(); });
+    });
+
+    // ========== NAV ==========
+    var navMap = document.getElementById('nav-map');
+    var navList = document.getElementById('nav-list');
+    var navReport = document.getElementById('nav-report');
+    var navProfile = document.getElementById('nav-profile');
+    var panels = document.querySelectorAll('.panel');
+    var allNavBtns = [navMap, navList, navReport, navProfile];
+
+    function hideAllPanels() {
+        panels.forEach(function(p){ p.classList.remove('active'); });
+        allNavBtns.forEach(function(b){ b.classList.remove('active'); });
+    }
+
+    navMap.onclick = function(){ hideAllPanels(); navMap.classList.add('active'); };
+    navList.onclick = function(){ hideAllPanels(); navList.classList.add('active'); document.getElementById('panel-list').classList.add('active'); renderList(); };
+    navReport.onclick = function(){ hideAllPanels(); navReport.classList.add('active'); document.getElementById('panel-report').classList.add('active'); };
+    navProfile.onclick = function(){ hideAllPanels(); navProfile.classList.add('active'); document.getElementById('panel-profile').classList.add('active'); };
+
+    // ========== LIST ==========
+    function renderList() {
+        var html = '<h3 style="margin-bottom:12px;">All Reports ('+reports.length+')</h3>';
+        reports.forEach(function(r){
+            html += '<div class="card" style="display:flex;gap:12px;align-items:center;">' +
+                '<img src="'+r.photoUrl+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" onerror="this.style.display=\'none\'">' +
+                '<div style="flex:1;"><div style="font-weight:600;text-transform:capitalize;">'+r.trashType.replace(/_/g,' ')+'</div>' +
+                '<div style="font-size:0.8rem;color:#636e72;">'+r.severity+' · '+r.date+'</div></div>' +
+                '<span class="status-badge status-'+r.status+'">'+r.status+'</span></div>';
+        });
+        document.getElementById('panel-list').innerHTML = html;
+    }
+
+    // ========== PLACEHOLDERS ==========
+    // Report form
+    document.getElementById('panel-report').innerHTML = `
+        <div class="card" style="max-width:500px;margin:0 auto;">
+            <h2 style="margin-bottom:16px;">📸 Report Trash</h2>
+            <div id="report-auth-gate"></div>
+            <form id="report-form" style="display:none;">
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem;font-weight:600;">Photo *</label><br>
+                    <input type="file" id="rpt-photo" accept="image/jpeg,image/png" capture="environment" style="margin-top:4px;">
+                    <div id="rpt-preview" style="margin-top:8px;display:none;"><img id="rpt-preview-img" style="width:100%;max-height:180px;object-fit:cover;border-radius:6px;"></div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem;font-weight:600;">Materials *</label><br>
+                    <div id="material-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem;font-weight:600;">Severity</label><br>
+                    <select id="rpt-severity" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-top:4px;">
+                        <option value="small">🟢 Small (fits in bag)</option>
+                        <option value="medium">🟡 Medium (needs boat)</option>
+                        <option value="large">🔴 Large (needs help)</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem;font-weight:600;">Description</label><br>
+                    <textarea id="rpt-desc" rows="3" placeholder="What did you see?" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-top:4px;"></textarea>
+                </div>
+                <div id="rpt-gps-info" style="font-size:0.8rem;color:#636e72;margin-bottom:12px;">📍 GPS: will extract from photo</div>
+                <button type="submit" style="width:100%;padding:12px;background:#2a9d8f;color:white;border:none;border-radius:6px;font-size:1rem;font-weight:600;cursor:pointer;">✅ Submit Report</button>
+                <div id="rpt-status" style="margin-top:8px;font-size:0.85rem;"></div>
+            </form>
+        </div>
+    `;
+
+    // Material tags
+    var MATERIALS = ['plastic','metal','glass','styrofoam','organic','hazardous','fabric','mixed'];
+    var selectedMaterials = [];
+    var tagsContainer = document.getElementById('material-tags');
+    MATERIALS.forEach(function(m){
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = m;
+        btn.style.cssText = 'padding:6px 12px;border:2px solid #ddd;border-radius:20px;font-size:0.8rem;cursor:pointer;background:white;text-transform:capitalize;';
+        btn.onclick = function(){
+            if(selectedMaterials.includes(m)){
+                selectedMaterials = selectedMaterials.filter(function(x){return x!==m;});
+                btn.style.background = 'white'; btn.style.borderColor = '#ddd'; btn.style.color = '#333';
+            } else {
+                selectedMaterials.push(m);
+                btn.style.background = '#0077b6'; btn.style.borderColor = '#0077b6'; btn.style.color = 'white';
+            }
+        };
+        tagsContainer.appendChild(btn);
+    });
+
+    // Photo preview + EXIF GPS
+    var reportGPS = null;
+    document.getElementById('rpt-photo').onchange = function(e){
+        var file = e.target.files[0];
+        if(!file) return;
+        var reader = new FileReader();
+        reader.onload = function(ev){
+            document.getElementById('rpt-preview-img').src = ev.target.result;
+            document.getElementById('rpt-preview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+        // Extract GPS via EXIF
+        if(window.EXIF){
+            EXIF.getData(file, function(){
+                var lat = EXIF.getTag(this,'GPSLatitude');
+                var lng = EXIF.getTag(this,'GPSLongitude');
+                var latRef = EXIF.getTag(this,'GPSLatitudeRef')||'N';
+                var lngRef = EXIF.getTag(this,'GPSLongitudeRef')||'W';
+                if(lat && lng){
+                    var latDec = lat[0]+lat[1]/60+lat[2]/3600;
+                    var lngDec = lng[0]+lng[1]/60+lng[2]/3600;
+                    if(latRef==='S') latDec=-latDec;
+                    if(lngRef==='W') lngDec=-lngDec;
+                    reportGPS = {lat:latDec, lng:lngDec};
+                    document.getElementById('rpt-gps-info').innerHTML = '📍 GPS: <strong>'+latDec.toFixed(5)+', '+lngDec.toFixed(5)+'</strong>';
+                } else {
+                    document.getElementById('rpt-gps-info').textContent = '⚠️ No GPS in photo — tap map to set location manually';
+                }
+            });
+        }
+    };
+
+    // Profile/Auth panel
+    document.getElementById('panel-profile').innerHTML = `
+        <div class="card" style="max-width:400px;margin:0 auto;text-align:center;">
+            <h2>👤 Account</h2>
+            <div id="auth-ui"></div>
+            <button id="show-intro-btn" style="margin-top:20px;background:none;border:none;color:#0077b6;font-size:0.85rem;text-decoration:underline;cursor:pointer;">Ver la introducción otra vez</button>
+        </div>
+    `;
+    document.getElementById('show-intro-btn').onclick = showWelcome;
+
+    // ========== FIREBASE AUTH ==========
+    var currentUser = null;
+
+    function waitForFirebase(cb){
+        if(window.FB) cb();
+        else window.addEventListener('firebase-ready', cb);
+    }
+
+    waitForFirebase(function(){
+        var FB = window.FB;
+        FB.onAuthStateChanged(FB.auth, function(user){
+            currentUser = user;
+            renderAuthUI();
+            renderReportGate();
+        });
+    });
+
+    function renderAuthUI(){
+        var el = document.getElementById('auth-ui');
+        if(currentUser){
+            el.innerHTML = '<p style="margin:12px 0;">Logged in as <strong>'+currentUser.displayName+'</strong></p><p style="color:#636e72;font-size:0.85rem;">'+currentUser.email+'</p><button id="logout-btn" style="margin-top:16px;padding:10px 20px;background:#e63946;color:white;border:none;border-radius:6px;cursor:pointer;">Log out</button>';
+            document.getElementById('logout-btn').onclick = function(){ window.FB.signOut(window.FB.auth); };
+        } else {
+            el.innerHTML = `
+                <div style="margin-top:16px;text-align:left;">
+                    <input id="auth-name" type="text" placeholder="Display name" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px;">
+                    <input id="auth-email" type="email" placeholder="Email" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px;">
+                    <input id="auth-pass" type="password" placeholder="Password (min 6)" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;margin-bottom:12px;">
+                    <button id="btn-register" style="width:48%;padding:10px;background:#0077b6;color:white;border:none;border-radius:6px;cursor:pointer;">Register</button>
+                    <button id="btn-login" style="width:48%;padding:10px;background:#2a9d8f;color:white;border:none;border-radius:6px;cursor:pointer;margin-left:4%;">Login</button>
+                    <p id="auth-error" style="color:#e63946;font-size:0.8rem;margin-top:8px;"></p>
+                </div>
+            `;
+            document.getElementById('btn-register').onclick = async function(){
+                var name = document.getElementById('auth-name').value.trim();
+                var email = document.getElementById('auth-email').value.trim();
+                var pass = document.getElementById('auth-pass').value;
+                try{
+                    var cred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
+                    await window.FB.updateProfile(cred.user, {displayName: name});
+                    // Force re-render with updated name
+                    currentUser = cred.user;
+                    renderAuthUI();
+                    document.getElementById('auth-error').textContent = '';
+                }catch(e){ document.getElementById('auth-error').textContent = e.message; }
+            };
+            document.getElementById('btn-login').onclick = async function(){
+                var email = document.getElementById('auth-email').value.trim();
+                var pass = document.getElementById('auth-pass').value;
+                try{
+                    await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
+                    document.getElementById('auth-error').textContent = '';
+                }catch(e){ document.getElementById('auth-error').textContent = e.message; }
+            };
+        }
+    }
+
+    function renderReportGate(){
+        var gate = document.getElementById('report-auth-gate');
+        var form = document.getElementById('report-form');
+        if(currentUser){
+            gate.style.display = 'none';
+            form.style.display = 'block';
+        } else {
+            gate.innerHTML = '<p style="color:#636e72;">Please <strong>log in</strong> (👤 tab) to submit reports.</p>';
+            gate.style.display = 'block';
+            form.style.display = 'none';
+        }
+    }
+
+    // ========== REPORT SUBMISSION ==========
+    document.getElementById('report-form').onsubmit = async function(e){
+        e.preventDefault();
+        if(!currentUser){ alert('Please log in first.'); return; }
+        if(!reportGPS){ alert('No GPS location. Upload a photo with GPS or set manually.'); return; }
+        if(selectedMaterials.length===0){ alert('Please select at least one material type.'); return; }
+
+        var file = document.getElementById('rpt-photo').files[0];
+        if(!file){ alert('Please add a photo.'); return; }
+
+        var statusEl = document.getElementById('rpt-status');
+        statusEl.textContent = '⏳ Uploading...';
+
+        try{
+            var FB = window.FB;
+            // Upload photo
+            var filename = (currentUser.displayName||'anon').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,20) + '_' + Math.abs(reportGPS.lat).toFixed(4) + (reportGPS.lat>=0?'N':'S') + '-' + Math.abs(reportGPS.lng).toFixed(4) + (reportGPS.lng>=0?'E':'W') + '_' + Date.now() + '.jpg';
+            var storageRef = FB.ref(FB.storage, 'reports/before/' + filename);
+            await FB.uploadBytes(storageRef, file);
+            var photoUrl = await FB.getDownloadURL(storageRef);
+
+            // Save to Firestore
+            await FB.addDoc(FB.collection(FB.db, 'reports'), {
+                reporterId: currentUser.uid,
+                reporterName: currentUser.displayName || 'Anonymous',
+                lat: reportGPS.lat,
+                lng: reportGPS.lng,
+                photoUrl: photoUrl,
+                photoFilename: filename,
+                photoOriginalName: file.name,
+                materials: selectedMaterials,
+                severity: document.getElementById('rpt-severity').value,
+                description: document.getElementById('rpt-desc').value,
+                status: 'spotted',
+                createdAt: FB.serverTimestamp()
+            });
+
+            statusEl.innerHTML = '<span style="color:#2a9d8f;">✅ Report submitted!</span>';
+            // Reset form
+            document.getElementById('report-form').reset();
+            document.getElementById('rpt-preview').style.display='none';
+            reportGPS = null;
+            selectedMaterials = [];
+            document.querySelectorAll('#material-tags button').forEach(function(b){ b.style.background='white'; b.style.borderColor='#ddd'; b.style.color='#333'; });
+            document.getElementById('rpt-gps-info').textContent = '📍 GPS: will extract from photo';
+        }catch(err){
+            statusEl.innerHTML = '<span style="color:#e63946;">❌ '+err.message+'</span>';
+        }
+    };
+
+    </script>
+    <!-- EXIF.js for GPS extraction -->
+    <script src="https://cdn.jsdelivr.net/npm/exif-js@2.3.0/exif.min.js"></script>
+</body>
+</html>

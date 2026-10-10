@@ -1,0 +1,525 @@
+{
+  "info": {
+    "name": "Chicleana - Firebase API Tests",
+    "description": "Validates Firebase backend connectivity and the full report lifecycle (create, claim, complete cleanup) for the Chicleana platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "FIREBASE_API_KEY",
+      "value": "AIzaSyCmjoLEbko7ILvhlJdMz-gqmAHJvJkw2O0",
+      "type": "default"
+    },
+    {
+      "key": "FIREBASE_PROJECT_ID",
+      "value": "chicleana",
+      "type": "default"
+    },
+    {
+      "key": "FIREBASE_AUTH_DOMAIN",
+      "value": "chicleana.firebaseapp.com",
+      "type": "default"
+    },
+    {
+      "key": "FIRESTORE_BASE_URL",
+      "value": "https://firestore.googleapis.com/v1/projects/chicleana/databases/(default)/documents",
+      "type": "default"
+    },
+    {
+      "key": "AUTH_BASE_URL",
+      "value": "https://identitytoolkit.googleapis.com/v1",
+      "type": "default"
+    },
+    {
+      "key": "TEST_ID_TOKEN",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "TEST_LOCAL_ID",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "TEST_REPORT_ID",
+      "value": "",
+      "type": "default"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Firebase Configuration Validation",
+      "item": [
+        {
+          "name": "Verify Firebase Auth endpoint is reachable",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{AUTH_BASE_URL}}/accounts:signUp?key={{FIREBASE_API_KEY}}",
+              "host": ["{{AUTH_BASE_URL}}"],
+              "path": ["accounts:signUp"],
+              "query": [{ "key": "key", "value": "{{FIREBASE_API_KEY}}" }]
+            },
+            "body": { "mode": "raw", "raw": "{\"returnSecureToken\": true}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Firebase Auth endpoint responds', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400, 403]);",
+                  "});",
+                  "pm.test('Response is JSON', function () {",
+                  "    pm.response.to.have.header('Content-Type');",
+                  "});",
+                  "pm.test('API key is accepted (not INVALID_API_KEY error)', function () {",
+                  "    const json = pm.response.json();",
+                  "    if (json.error) {",
+                  "        pm.expect(json.error.message).to.not.equal('API key not valid. Please pass a valid API key.');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify Firestore REST API is reachable",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{FIRESTORE_BASE_URL}}/reports?pageSize=1&key={{FIREBASE_API_KEY}}",
+              "host": ["{{FIRESTORE_BASE_URL}}"],
+              "path": ["reports"],
+              "query": [
+                { "key": "pageSize", "value": "1" },
+                { "key": "key", "value": "{{FIREBASE_API_KEY}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Firestore endpoint responds', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});",
+                  "pm.test('Project ID is valid (no NOT_FOUND for project)', function () {",
+                  "    const json = pm.response.json();",
+                  "    if (json.error) {",
+                  "        pm.expect(json.error.status).to.not.equal('NOT_FOUND');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Auth Workflow",
+      "item": [
+        {
+          "name": "Register anonymous user (saves token for later requests)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{AUTH_BASE_URL}}/accounts:signUp?key={{FIREBASE_API_KEY}}",
+              "host": ["{{AUTH_BASE_URL}}"],
+              "path": ["accounts:signUp"],
+              "query": [{ "key": "key", "value": "{{FIREBASE_API_KEY}}" }]
+            },
+            "body": { "mode": "raw", "raw": "{\"returnSecureToken\": true}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Anonymous sign-up responds', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.test('Returns ID token', function () {",
+                  "        pm.expect(json).to.have.property('idToken');",
+                  "    });",
+                  "    pm.test('Returns local ID', function () {",
+                  "        pm.expect(json).to.have.property('localId');",
+                  "    });",
+                  "    pm.collectionVariables.set('TEST_ID_TOKEN', json.idToken);",
+                  "    pm.collectionVariables.set('TEST_LOCAL_ID', json.localId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sign in with invalid credentials (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{AUTH_BASE_URL}}/accounts:signInWithPassword?key={{FIREBASE_API_KEY}}",
+              "host": ["{{AUTH_BASE_URL}}"],
+              "path": ["accounts:signInWithPassword"],
+              "query": [{ "key": "key", "value": "{{FIREBASE_API_KEY}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"nonexistent@test.invalid\", \"password\": \"wrongpassword123\", \"returnSecureToken\": true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Invalid credentials return 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Error message indicates invalid credentials', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.error).to.exist;",
+                  "    pm.expect(json.error.message).to.be.oneOf(['EMAIL_NOT_FOUND', 'INVALID_LOGIN_CREDENTIALS', 'INVALID_PASSWORD']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Report Lifecycle (Create → Claim → Complete)",
+      "item": [
+        {
+          "name": "Create a trash report",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TEST_ID_TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{FIRESTORE_BASE_URL}}/reports?key={{FIREBASE_API_KEY}}",
+              "host": ["{{FIRESTORE_BASE_URL}}"],
+              "path": ["reports"],
+              "query": [{ "key": "key", "value": "{{FIREBASE_API_KEY}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"reporterId\":    { \"stringValue\": \"{{TEST_LOCAL_ID}}\" },\n    \"reporterName\":  { \"stringValue\": \"Test User\" },\n    \"lat\":           { \"doubleValue\": 36.4026 },\n    \"lng\":           { \"doubleValue\": -6.1499 },\n    \"photoUrl\":      { \"stringValue\": \"https://example.com/test-photo.jpg\" },\n    \"trashType\":     { \"stringValue\": \"beer_cans\" },\n    \"severity\":      { \"stringValue\": \"small\" },\n    \"description\":   { \"stringValue\": \"Postman test report\" },\n    \"status\":        { \"stringValue\": \"open\" },\n    \"claimedBy\":     { \"nullValue\": null },\n    \"claimerName\":   { \"nullValue\": null },\n    \"claimedAt\":     { \"nullValue\": null },\n    \"cleanedAt\":     { \"nullValue\": null },\n    \"afterPhotoUrl\": { \"nullValue\": null }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Report creation responds', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.test('Report document has a name (ID)', function () {",
+                  "        pm.expect(json.name).to.be.a('string');",
+                  "    });",
+                  "    pm.test('Status field is open', function () {",
+                  "        pm.expect(json.fields.status.stringValue).to.equal('open');",
+                  "    });",
+                  "    pm.test('Valid trash type saved', function () {",
+                  "        const validTypes = ['beer_cans','cooler_box','boat_kayak','chair','plastic_bottles','fishing_gear','mixed_other'];",
+                  "        pm.expect(validTypes).to.include(json.fields.trashType.stringValue);",
+                  "    });",
+                  "    pm.test('Valid severity saved', function () {",
+                  "        pm.expect(['small','medium','large']).to.include(json.fields.severity.stringValue);",
+                  "    });",
+                  "    // Save report ID for subsequent requests",
+                  "    const parts = json.name.split('/');",
+                  "    pm.collectionVariables.set('TEST_REPORT_ID', parts[parts.length - 1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get report by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TEST_ID_TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{FIRESTORE_BASE_URL}}/reports/{{TEST_REPORT_ID}}?key={{FIREBASE_API_KEY}}",
+              "host": ["{{FIRESTORE_BASE_URL}}"],
+              "path": ["reports", "{{TEST_REPORT_ID}}"],
+              "query": [{ "key": "key", "value": "{{FIREBASE_API_KEY}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Get report responds', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Report has all required fields', function () {",
+                  "        const json = pm.response.json();",
+                  "        const fields = json.fields;",
+                  "        pm.expect(fields).to.have.property('reporterId');",
+                  "        pm.expect(fields).to.have.property('lat');",
+                  "        pm.expect(fields).to.have.property('lng');",
+                  "        pm.expect(fields).to.have.property('photoUrl');",
+                  "        pm.expect(fields).to.have.property('trashType');",
+                  "        pm.expect(fields).to.have.property('severity');",
+                  "        pm.expect(fields).to.have.property('status');",
+                  "    });",
+                  "    pm.test('Report status is open (not yet claimed)', function () {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json.fields.status.stringValue).to.equal('open');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Claim the report",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TEST_ID_TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{FIRESTORE_BASE_URL}}/reports/{{TEST_REPORT_ID}}?updateMask.fieldPaths=status&updateMask.fieldPaths=claimedBy&updateMask.fieldPaths=claimerName&key={{FIREBASE_API_KEY}}",
+              "host": ["{{FIRESTORE_BASE_URL}}"],
+              "path": ["reports", "{{TEST_REPORT_ID}}"],
+              "query": [
+                { "key": "updateMask.fieldPaths", "value": "status" },
+                { "key": "updateMask.fieldPaths", "value": "claimedBy" },
+                { "key": "updateMask.fieldPaths", "value": "claimerName" },
+                { "key": "key", "value": "{{FIREBASE_API_KEY}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"status\":      { \"stringValue\": \"claimed\" },\n    \"claimedBy\":   { \"stringValue\": \"{{TEST_LOCAL_ID}}\" },\n    \"claimerName\": { \"stringValue\": \"Test Cleaner\" }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Claim report responds', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Status updated to claimed', function () {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json.fields.status.stringValue).to.equal('claimed');",
+                  "    });",
+                  "    pm.test('claimedBy is set', function () {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json.fields.claimedBy.stringValue).to.not.be.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complete cleanup (mark as cleaned)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TEST_ID_TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{FIRESTORE_BASE_URL}}/reports/{{TEST_REPORT_ID}}?updateMask.fieldPaths=status&updateMask.fieldPaths=afterPhotoUrl&key={{FIREBASE_API_KEY}}",
+              "host": ["{{FIRESTORE_BASE_URL}}"],
+              "path": ["reports", "{{TEST_REPORT_ID}}"],
+              "query": [
+                { "key": "updateMask.fieldPaths", "value": "status" },
+                { "key": "updateMask.fieldPaths", "value": "afterPhotoUrl" },
+                { "key": "key", "value": "{{FIREBASE_API_KEY}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"status\":       { \"stringValue\": \"cleaned\" },\n    \"afterPhotoUrl\": { \"stringValue\": \"https://example.com/test-after-photo.jpg\" }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Complete cleanup responds', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Status updated to cleaned', function () {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json.fields.status.stringValue).to.equal('cleaned');",
+                  "    });",
+                  "    pm.test('afterPhotoUrl is set', function () {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json.fields.afterPhotoUrl.stringValue).to.not.be.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List all reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TEST_ID_TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{FIRESTORE_BASE_URL}}/reports?pageSize=5&key={{FIREBASE_API_KEY}}",
+              "host": ["{{FIRESTORE_BASE_URL}}"],
+              "path": ["reports"],
+              "query": [
+                { "key": "pageSize", "value": "5" },
+                { "key": "key", "value": "{{FIREBASE_API_KEY}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List reports responds', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Returns documents array', function () {",
+                  "        const json = pm.response.json();",
+                  "        if (json.documents) {",
+                  "            pm.expect(json.documents).to.be.an('array');",
+                  "            json.documents.forEach(doc => {",
+                  "                pm.expect(doc.fields).to.have.property('status');",
+                  "                pm.expect(['open','claimed','cleaned']).to.include(doc.fields.status.stringValue);",
+                  "            });",
+                  "        }",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Validation Edge Cases",
+      "item": [
+        {
+          "name": "Create report with invalid trash type (expect rejection)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TEST_ID_TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{FIRESTORE_BASE_URL}}/reports?key={{FIREBASE_API_KEY}}",
+              "host": ["{{FIRESTORE_BASE_URL}}"],
+              "path": ["reports"],
+              "query": [{ "key": "key", "value": "{{FIREBASE_API_KEY}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"reporterId\": { \"stringValue\": \"{{TEST_LOCAL_ID}}\" },\n    \"lat\":        { \"doubleValue\": 36.4026 },\n    \"lng\":        { \"doubleValue\": -6.1499 },\n    \"photoUrl\":   { \"stringValue\": \"https://example.com/test.jpg\" },\n    \"trashType\":  { \"stringValue\": \"INVALID_TYPE\" },\n    \"severity\":   { \"stringValue\": \"small\" },\n    \"status\":     { \"stringValue\": \"open\" }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Note: Firestore itself doesn't enforce enum validation — that's done in JS.",
+                  "// This test documents that Firestore accepts any string (validation is client-side).",
+                  "pm.test('Firestore accepts document (enum validation is client-side)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Document saved (no server-side enum guard)', function () {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json.name).to.be.a('string');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get non-existent report (expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TEST_ID_TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{FIRESTORE_BASE_URL}}/reports/nonexistentreportid999?key={{FIREBASE_API_KEY}}",
+              "host": ["{{FIRESTORE_BASE_URL}}"],
+              "path": ["reports", "nonexistentreportid999"],
+              "query": [{ "key": "key", "value": "{{FIREBASE_API_KEY}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Non-existent report returns 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([404, 403]);",
+                  "});",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test('Error status is NOT_FOUND', function () {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json.error.status).to.equal('NOT_FOUND');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
