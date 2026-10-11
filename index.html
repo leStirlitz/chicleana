@@ -12,7 +12,7 @@
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy, serverTimestamp, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
         import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
@@ -31,7 +31,7 @@
         const storage = getStorage(app);
 
         // Expose to global scope for inline scripts
-        window.FB = { auth, db, storage, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, collection, addDoc, getDocs, doc, updateDoc, query, orderBy, serverTimestamp, where, ref, uploadBytes, getDownloadURL };
+        window.FB = { auth, db, storage, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail, collection, addDoc, getDocs, doc, updateDoc, query, orderBy, serverTimestamp, where, ref, uploadBytes, getDownloadURL };
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
     <style>
@@ -1750,6 +1750,7 @@
                 
                 <div class="form-group">
                     <label class="form-label">Descripción</label>
+                    <div id="rpt-ai-status" style="font-size:0.8rem;color:var(--ocean);margin-bottom:6px;min-height:18px;"></div>
                     <textarea id="rpt-desc" class="form-textarea" rows="3" placeholder="¿Qué has visto?"></textarea>
                 </div>
                 
@@ -1788,6 +1789,101 @@
         tagsContainer.appendChild(btn);
     });
 
+    // ========== VISION CLASSIFICATION ==========
+    // Free tier: 1500 req/day — get key at https://aistudio.google.com/app/apikey
+    // Key stored in localStorage (never committed to git)
+    function getGeminiKey() {
+        var key = localStorage.getItem('chicleana_gemini_key');
+        if (!key) {
+            key = prompt('Introduce tu clave de API de Google Gemini\n(gratis en aistudio.google.com/app/apikey):');
+            if (key && key.trim()) localStorage.setItem('chicleana_gemini_key', key.trim());
+        }
+        return key ? key.trim() : null;
+    }
+
+    var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=';
+
+    var MATERIAL_MAP = {
+        'plástico': 'plástico', 'plastic': 'plástico', 'plastico': 'plástico',
+        'metal': 'metal',
+        'vidrio': 'vidrio', 'glass': 'vidrio',
+        'poliespán': 'poliespán', 'polyspan': 'poliespán', 'styrofoam': 'poliespán', 'foam': 'poliespán', 'poliespan': 'poliespán',
+        'orgánico': 'orgánico', 'organico': 'orgánico', 'organic': 'orgánico', 'wood': 'orgánico',
+        'peligroso': 'peligroso', 'hazardous': 'peligroso',
+        'tela': 'tela', 'fabric': 'tela', 'rope': 'tela',
+        'mixto': 'mixto', 'mixed': 'mixto'
+    };
+
+    async function classifyPhoto(base64Image) {
+        var prompt = `Eres un asistente que clasifica basura encontrada en una marisma española (Bahía de Chiclana).
+Analiza la foto y responde ÚNICAMENTE con un objeto JSON, sin texto adicional:
+{
+  "materials": ["uno o más de: plástico, metal, vidrio, poliespán, orgánico, peligroso, tela, mixto"],
+  "severity": "small O medium O large",
+  "description": "Una frase en español describiendo lo que ves (máx 15 palabras)"
+}
+- small = cabe en una bolsa
+- medium = necesita bote para retirar
+- large = necesita varias personas o maquinaria`;
+
+        var body = {
+            contents: [{
+                parts: [
+                    { inline_data: { mime_type: 'image/jpeg', data: base64Image } },
+                    { text: prompt }
+                ]
+            }],
+            generationConfig: { maxOutputTokens: 200, temperature: 0.1 }
+        };
+
+        var resp = await fetch(GEMINI_URL + getGeminiKey(), {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (!resp.ok) throw new Error('API error ' + resp.status);
+        var data = await resp.json();
+        var text = data.candidates[0].content.parts[0].text.trim();
+        // Strip markdown code fences if Gemini wraps in ```json ... ```
+        text = text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+        return JSON.parse(text);
+    }
+
+    function applyClassification(result) {
+        // Set severity
+        var sevEl = document.getElementById('rpt-severity');
+        if (result.severity) sevEl.value = result.severity;
+
+        // Set description
+        if (result.description) {
+            document.getElementById('rpt-desc').value = result.description;
+        }
+
+        // Set material tags
+        if (result.materials && result.materials.length) {
+            selectedMaterials = [];
+            document.querySelectorAll('.tag-btn').forEach(function(btn) {
+                btn.classList.remove('selected');
+            });
+            result.materials.forEach(function(mat) {
+                var mapped = MATERIAL_MAP[mat.toLowerCase()] || mat.toLowerCase();
+                if (MATERIALS.includes(mapped)) {
+                    selectedMaterials.push(mapped);
+                    document.querySelectorAll('.tag-btn').forEach(function(btn) {
+                        if (btn.textContent === mapped) btn.classList.add('selected');
+                    });
+                }
+            });
+        }
+
+        // Show AI badge on description
+        var descLabel = document.querySelector('label[for="rpt-desc"]') ||
+            document.querySelector('.form-label:last-of-type');
+        var statusEl = document.getElementById('rpt-ai-status');
+        if (statusEl) statusEl.textContent = '✅ Clasificado por IA — edita si no es correcto';
+    }
+
     // Photo preview + EXIF GPS
     var reportGPS = null;
     document.getElementById('rpt-photo').onchange = function(e){
@@ -1798,6 +1894,17 @@
         reader.onload = function(ev){
             document.getElementById('rpt-preview-img').src = ev.target.result;
             document.getElementById('rpt-preview').classList.add('active');
+
+            // ---- Auto-classify ----
+            var statusEl = document.getElementById('rpt-ai-status');
+            if (statusEl) statusEl.textContent = '🤖 Clasificando foto...';
+            var b64 = ev.target.result.split(',')[1]; // strip data:image/jpeg;base64,
+            classifyPhoto(b64)
+                .then(function(result) { applyClassification(result); })
+                .catch(function(err) {
+                    console.warn('Classification failed:', err);
+                    if (statusEl) statusEl.textContent = '⚠️ Clasificación automática no disponible — rellena manualmente';
+                });
         };
         reader.readAsDataURL(file);
         
@@ -1885,6 +1992,9 @@
                         <button id="btn-login" type="button" class="btn btn-success">Entrar</button>
                     </div>
                     <p id="auth-error" class="auth-error"></p>
+                    <p style="text-align:center;margin-top:8px;">
+                        <a id="btn-forgot" href="#" style="font-size:0.85rem;color:var(--ocean);">¿Olvidaste tu contraseña?</a>
+                    </p>
                 </div>
             `;
             
@@ -1911,6 +2021,25 @@
                     document.getElementById('auth-error').textContent = '';
                 }catch(e){ 
                     document.getElementById('auth-error').textContent = e.message; 
+                }
+            };
+
+            document.getElementById('btn-forgot').onclick = async function(e){
+                e.preventDefault();
+                var email = document.getElementById('auth-email').value.trim();
+                var errEl = document.getElementById('auth-error');
+                if(!email){ 
+                    errEl.style.color = 'var(--amber)';
+                    errEl.textContent = 'Introduce tu email primero.'; 
+                    return; 
+                }
+                try{
+                    await window.FB.sendPasswordResetEmail(window.FB.auth, email);
+                    errEl.style.color = 'var(--green)';
+                    errEl.textContent = '✅ Email de recuperación enviado a ' + email;
+                }catch(e){
+                    errEl.style.color = 'var(--red)';
+                    errEl.textContent = e.message;
                 }
             };
         }
