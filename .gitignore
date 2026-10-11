@@ -1,8 +1,7 @@
 # Dependencies
 node_modules/
 
-# Photos (local test data, not in repo)
-photos/
+# Photos are now included in repo for demo
 
 # Test artifacts
 tests/__pycache__/

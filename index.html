@@ -9,8 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -37,62 +35,45 @@
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
     <style>
-        /* ===== Design System: Dark Professional ===== */
+        /* ===== Design System: Contemporary Minimalist ===== */
         :root {
-            /* Dark backgrounds */
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-elevated: #334155;
+            /* Primary palette */
+            --ocean: #0891b2;
+            --ocean-light: #22d3ee;
+            --ocean-dark: #0e7490;
+            --teal: #14b8a6;
+            --teal-dark: #0d9488;
             
-            /* Primary - Bright cyan/teal */
-            --primary: #06b6d4;
-            --primary-light: #22d3ee;
-            --primary-dark: #0891b2;
-            
-            /* Secondary - Emerald */
-            --secondary: #10b981;
-            --secondary-light: #34d399;
-            
-            /* Accent - Amber */
-            --accent: #f59e0b;
-            --accent-light: #fbbf24;
+            /* Accent */
+            --sand: #fbbf24;
+            --sand-light: #fcd34d;
             
             /* Status */
             --red: #ef4444;
-            --red-light: #f87171;
+            --red-light: #fca5a5;
             --amber: #f59e0b;
             --green: #22c55e;
-            --green-light: #4ade80;
+            --green-light: #86efac;
             
-            /* Text */
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            
-            /* Borders */
-            --border: #334155;
-            --border-light: #475569;
-            
-            /* Legacy neutrals for compatibility */
+            /* Neutrals */
             --white: #ffffff;
-            --gray-50: #f8fafc;
-            --gray-100: #f1f5f9;
-            --gray-200: #e2e8f0;
-            --gray-300: #cbd5e1;
-            --gray-400: #94a3b8;
-            --gray-500: #64748b;
-            --gray-600: #475569;
-            --gray-700: #334155;
-            --gray-800: #1e293b;
-            --gray-900: #0f172a;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
             
             /* Effects */
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
-            --glow-primary: 0 0 20px rgba(6, 182, 212, 0.3);
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
             
             /* Radius */
             --radius-sm: 6px;
@@ -111,8 +92,8 @@
         
         body { 
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
+            background: var(--gray-50);
+            color: var(--gray-800);
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
         }
@@ -120,12 +101,20 @@
         /* ===== Header ===== */
         #header {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border);
-            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--ocean) 0%, var(--teal) 100%);
+            color: white;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 16px; height: 56px;
             box-shadow: var(--shadow-md);
+        }
+        
+        #header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('castillo.jpg') center / cover no-repeat;
+            opacity: 0.08;
+            mix-blend-mode: overlay;
         }
         
         #header h1 { 
@@ -134,25 +123,24 @@
             letter-spacing: -0.025em;
             display: flex;
             align-items: center;
-            gap: 10px;
-            color: var(--text-primary);
+            gap: 8px;
+            position: relative;
+            z-index: 1;
         }
         
-        #header h1 i {
-            color: var(--primary-light);
-        }
-        
-        #header nav { display: flex; gap: 4px; }
+        #header nav { display: flex; gap: 4px; position: relative; z-index: 1; }
         
         .nav-btn {
             background: transparent; 
-            border: 1px solid transparent;
-            color: var(--text-secondary);
+            border: none; 
+            color: white;
+            font-size: 1.25rem; 
             padding: 10px;
-            border-radius: var(--radius-sm);
+            border-radius: var(--radius);
             cursor: pointer; 
             min-width: 44px; 
             min-height: 44px;
+            opacity: 0.75; 
             transition: all var(--transition);
             display: flex;
             align-items: center;
@@ -160,15 +148,15 @@
         }
         
         .nav-btn:hover { 
-            color: var(--primary-light);
-            background: rgba(6, 182, 212, 0.1);
-            border-color: rgba(6, 182, 212, 0.2);
+            opacity: 1; 
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
         }
         
         .nav-btn.active { 
-            color: var(--primary-light);
-            background: rgba(6, 182, 212, 0.15);
-            border-color: rgba(6, 182, 212, 0.3);
+            opacity: 1; 
+            background: rgba(255,255,255,0.2);
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.3);
         }
 
         /* ===== Map ===== */
@@ -187,8 +175,9 @@
             bottom: 20px; 
             left: 16px; 
             z-index: 999;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-radius: var(--radius);
             padding: 10px 16px;
             font-size: 0.8rem;
@@ -196,13 +185,14 @@
             box-shadow: var(--shadow-lg);
             display: flex; 
             gap: 16px;
+            border: 1px solid rgba(255,255,255,0.8);
         }
         
         .legend-item { 
             display: flex; 
             align-items: center; 
             gap: 6px;
-            color: var(--text-secondary);
+            color: var(--gray-600);
         }
         
         .legend-dot { 
@@ -248,7 +238,7 @@
             right: 0; 
             bottom: 0;
             z-index: 500; 
-            background: var(--bg-dark);
+            background: var(--gray-50);
             overflow-y: auto;
             display: none; 
             padding: 20px 16px;
@@ -264,18 +254,17 @@
 
         /* ===== Cards ===== */
         .card {
-            background: var(--bg-card);
+            background: var(--white);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow);
             padding: 20px;
             margin-bottom: 16px;
-            border: 1px solid var(--border);
+            border: 1px solid var(--gray-100);
             transition: all var(--transition);
         }
         
         .card:hover {
             box-shadow: var(--shadow-md);
-            border-color: var(--border-light);
             transform: translateY(-2px);
         }
 
@@ -300,24 +289,24 @@
         .btn:active { transform: scale(0.98); }
         
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--bg-dark);
-            box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
+            background: linear-gradient(135deg, var(--ocean) 0%, var(--ocean-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(8, 145, 178, 0.35);
         }
         
         .btn-primary:hover {
-            box-shadow: var(--glow-primary), 0 6px 20px rgba(6, 182, 212, 0.45);
+            box-shadow: 0 6px 20px rgba(8, 145, 178, 0.45);
             transform: translateY(-2px);
         }
         
         .btn-success {
-            background: linear-gradient(135deg, var(--secondary) 0%, #059669 100%);
+            background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
             color: white;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+            box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
         }
         
         .btn-success:hover {
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), 0 6px 20px rgba(16, 185, 129, 0.45);
+            box-shadow: 0 6px 20px rgba(20, 184, 166, 0.45);
             transform: translateY(-2px);
         }
         
@@ -328,20 +317,20 @@
         }
         
         .btn-danger:hover {
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), 0 6px 20px rgba(239, 68, 68, 0.45);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
             transform: translateY(-2px);
         }
         
         .btn-outline {
             background: transparent;
-            border: 2px solid var(--border-light);
-            color: var(--text-secondary);
+            border: 2px solid var(--gray-200);
+            color: var(--gray-600);
         }
         
         .btn-outline:hover {
-            border-color: var(--primary);
-            color: var(--primary-light);
-            background: rgba(6, 182, 212, 0.1);
+            border-color: var(--ocean);
+            color: var(--ocean);
+            background: rgba(8, 145, 178, 0.05);
         }
         
         .btn-block { width: 100%; }
@@ -361,7 +350,7 @@
             display: block;
             font-size: 0.85rem;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: var(--gray-700);
             margin-bottom: 8px;
         }
         
@@ -370,12 +359,12 @@
         .form-textarea {
             width: 100%;
             padding: 12px 16px;
-            border: 2px solid var(--border);
+            border: 2px solid var(--gray-200);
             border-radius: var(--radius);
             font-family: inherit;
             font-size: 1rem;
-            color: var(--text-primary);
-            background: var(--bg-elevated);
+            color: var(--gray-800);
+            background: var(--white);
             transition: all var(--transition);
         }
         
@@ -383,12 +372,12 @@
         .form-select:focus,
         .form-textarea:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+            border-color: var(--ocean);
+            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
         }
         
         .form-input::placeholder {
-            color: var(--text-muted);
+            color: var(--gray-400);
         }
         
         .form-textarea {
@@ -405,28 +394,28 @@
         
         .tag-btn {
             padding: 8px 16px;
-            border: 2px solid var(--border);
+            border: 2px solid var(--gray-200);
             border-radius: var(--radius-full);
             font-family: inherit;
             font-size: 0.85rem;
             font-weight: 500;
             cursor: pointer;
-            background: var(--bg-elevated);
-            color: var(--text-secondary);
+            background: var(--white);
+            color: var(--gray-600);
             text-transform: capitalize;
             transition: all var(--transition);
         }
         
         .tag-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary-light);
+            border-color: var(--ocean-light);
+            color: var(--ocean);
         }
         
         .tag-btn.selected {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: linear-gradient(135deg, var(--ocean) 0%, var(--teal) 100%);
             border-color: transparent;
             color: white;
-            box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+            box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
         }
 
         /* ===== Welcome Screen ===== */
@@ -434,8 +423,8 @@
             position: fixed; 
             inset: 0; 
             z-index: 2000;
-            background: linear-gradient(150deg, var(--bg-dark) 0%, #0c4a6e 50%, var(--bg-card) 100%);
-            color: var(--text-primary); 
+            background: linear-gradient(150deg, var(--ocean) 0%, var(--teal) 50%, var(--ocean-dark) 100%);
+            color: white; 
             overflow-y: auto;
             display: flex; 
             align-items: center; 
@@ -450,8 +439,8 @@
             position: absolute;
             inset: 0;
             background: url('castillo.jpg') center bottom / cover no-repeat;
-            opacity: 0.1;
-            mix-blend-mode: luminosity;
+            opacity: 0.15;
+            mix-blend-mode: overlay;
         }
         
         #welcome.hidden { display: none; }
@@ -482,20 +471,20 @@
             height: 80px;
             border-radius: 50%;
             object-fit: cover;
-            border: 3px solid rgba(6, 182, 212, 0.3);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 3px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             transition: all var(--transition);
         }
         
         .heritage-img:hover {
             transform: scale(1.1);
-            border-color: var(--primary);
+            border-color: rgba(255,255,255,0.6);
         }
         
         .welcome-logo { 
             font-size: 4rem; 
             line-height: 1;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
             animation: float 3s ease-in-out infinite;
         }
         
@@ -509,22 +498,18 @@
             font-weight: 800; 
             margin: 12px 0 8px;
             letter-spacing: -0.03em;
-            background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
         
         .welcome-tagline { 
             font-size: 1.1rem; 
-            color: var(--text-secondary);
+            opacity: 0.95; 
             margin-bottom: 4px;
             font-weight: 500;
         }
         
         .welcome-place { 
             font-size: 0.9rem; 
-            color: var(--text-muted);
+            opacity: 0.8; 
             margin-bottom: 32px;
         }
 
@@ -537,10 +522,10 @@
         }
         
         .welcome-step {
-            background: rgba(6, 182, 212, 0.1);
+            background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(6, 182, 212, 0.2);
+            border: 1px solid rgba(255,255,255,0.15);
             border-radius: var(--radius-lg);
             padding: 16px 18px;
             display: flex; 
@@ -550,8 +535,7 @@
         }
         
         .welcome-step:hover {
-            background: rgba(6, 182, 212, 0.15);
-            border-color: rgba(6, 182, 212, 0.3);
+            background: rgba(255,255,255,0.15);
             transform: translateX(4px);
         }
         
@@ -560,20 +544,19 @@
             width: 40px; 
             height: 40px; 
             border-radius: var(--radius-full);
-            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
-            color: var(--bg-dark); 
+            background: white; 
+            color: var(--ocean); 
             font-weight: 800;
             display: flex; 
             align-items: center; 
             justify-content: center;
             font-size: 1.1rem;
-            box-shadow: var(--shadow-md), var(--glow-primary);
+            box-shadow: var(--shadow-md);
         }
         
         .welcome-step h3 { 
             font-size: 1rem; 
             font-weight: 700;
-            color: var(--text-primary);
             margin-bottom: 4px; 
             display: flex; 
             align-items: center; 
@@ -582,7 +565,7 @@
         
         .welcome-step p { 
             font-size: 0.9rem; 
-            color: var(--text-secondary);
+            opacity: 0.9; 
             line-height: 1.5;
         }
 
@@ -596,7 +579,7 @@
         }
         
         .welcome-legend .legend-item { 
-            color: var(--text-secondary);
+            opacity: 0.95;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -607,19 +590,19 @@
             padding: 18px 24px; 
             border: none; 
             border-radius: var(--radius-lg);
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: var(--bg-dark);
+            background: linear-gradient(135deg, var(--sand) 0%, var(--sand-light) 100%);
+            color: var(--gray-900);
             font-family: inherit;
             font-size: 1.15rem; 
             font-weight: 800; 
             cursor: pointer;
-            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.4), var(--glow-primary);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
             transition: all var(--transition);
             letter-spacing: -0.01em;
         }
         
         .welcome-cta:hover { 
-            box-shadow: 0 12px 32px rgba(6, 182, 212, 0.5), 0 0 30px rgba(6, 182, 212, 0.4);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.35);
             transform: translateY(-2px);
         }
         
@@ -631,7 +614,7 @@
             margin-top: 16px; 
             background: none; 
             border: none;
-            color: var(--text-muted);
+            color: rgba(255,255,255,0.85); 
             font-family: inherit;
             font-size: 0.9rem;
             font-weight: 500;
@@ -641,7 +624,7 @@
         }
         
         .welcome-skip:hover {
-            color: var(--text-secondary);
+            color: white;
         }
 
         /* ===== Photo Preview ===== */
@@ -650,7 +633,6 @@
             border-radius: var(--radius);
             overflow: hidden;
             display: none;
-            border: 1px solid var(--border);
         }
         
         .photo-preview.active {
@@ -669,17 +651,15 @@
             align-items: center;
             gap: 8px;
             padding: 12px 16px;
-            background: var(--bg-elevated);
+            background: var(--gray-100);
             border-radius: var(--radius);
             font-size: 0.9rem;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
+            color: var(--gray-600);
         }
         
         .gps-info.has-gps {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: rgba(16, 185, 129, 0.3);
-            color: var(--secondary-light);
+            background: rgba(20, 184, 166, 0.1);
+            color: var(--teal-dark);
         }
 
         /* ===== List Item ===== */
@@ -695,7 +675,6 @@
             object-fit: cover;
             border-radius: var(--radius);
             flex-shrink: 0;
-            border: 1px solid var(--border);
         }
         
         .report-info {
@@ -706,13 +685,13 @@
         .report-title {
             font-weight: 600;
             text-transform: capitalize;
-            color: var(--text-primary);
+            color: var(--gray-800);
             margin-bottom: 4px;
         }
         
         .report-meta {
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: var(--gray-500);
         }
 
         /* ===== Auth UI ===== */
@@ -731,7 +710,7 @@
         }
         
         .auth-error {
-            color: var(--red-light);
+            color: var(--red);
             font-size: 0.85rem;
             margin-top: 12px;
         }
@@ -744,13 +723,13 @@
         .user-name {
             font-size: 1.25rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--gray-800);
             margin-bottom: 4px;
         }
         
         .user-email {
             font-size: 0.9rem;
-            color: var(--text-muted);
+            color: var(--gray-500);
         }
 
         /* ===== Status Message ===== */
@@ -759,25 +738,21 @@
             border-radius: var(--radius);
             font-size: 0.9rem;
             margin-top: 12px;
-            border: 1px solid transparent;
         }
         
         .status-msg.success {
             background: rgba(34, 197, 94, 0.1);
-            border-color: rgba(34, 197, 94, 0.3);
-            color: var(--green-light);
+            color: var(--green);
         }
         
         .status-msg.error {
             background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.3);
-            color: var(--red-light);
+            color: var(--red);
         }
         
         .status-msg.loading {
-            background: var(--bg-elevated);
-            border-color: var(--border);
-            color: var(--text-secondary);
+            background: var(--gray-100);
+            color: var(--gray-600);
         }
 
         /* ===== File Input ===== */
@@ -799,19 +774,19 @@
             justify-content: center;
             gap: 10px;
             padding: 16px 24px;
-            border: 2px dashed var(--border-light);
+            border: 2px dashed var(--gray-300);
             border-radius: var(--radius);
-            background: var(--bg-elevated);
-            color: var(--text-secondary);
+            background: var(--gray-50);
+            color: var(--gray-600);
             font-weight: 500;
             cursor: pointer;
             transition: all var(--transition);
         }
         
         .file-input-btn:hover {
-            border-color: var(--primary);
-            background: rgba(6, 182, 212, 0.1);
-            color: var(--primary-light);
+            border-color: var(--ocean);
+            background: rgba(8, 145, 178, 0.05);
+            color: var(--ocean);
         }
         
         .file-input-btn .icon {
@@ -822,12 +797,6 @@
         .leaflet-popup-content-wrapper {
             border-radius: var(--radius) !important;
             box-shadow: var(--shadow-lg) !important;
-            background: var(--bg-card) !important;
-            color: var(--text-primary) !important;
-        }
-        
-        .leaflet-popup-tip {
-            background: var(--bg-card) !important;
         }
         
         .leaflet-popup-content {
@@ -845,25 +814,23 @@
             object-fit: cover;
             border-radius: var(--radius-sm);
             margin-bottom: 10px;
-            border: 1px solid var(--border);
         }
         
         .popup-title {
             font-weight: 700;
             text-transform: capitalize;
             margin-bottom: 4px;
-            color: var(--text-primary);
         }
         
         .popup-meta {
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: var(--gray-500);
             margin-bottom: 8px;
         }
         
         .popup-desc {
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: var(--gray-600);
             margin-top: 8px;
             line-height: 1.4;
         }
@@ -872,7 +839,7 @@
         .section-title {
             font-size: 1.25rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--gray-800);
             margin-bottom: 16px;
             display: flex;
             align-items: center;
@@ -882,7 +849,7 @@
         .section-count {
             font-size: 0.85rem;
             font-weight: 500;
-            color: var(--text-muted);
+            color: var(--gray-400);
         }
 
         /* ===== Responsive ===== */
@@ -901,13 +868,13 @@
         .leaderboard-title {
             font-size: 1.5rem;
             font-weight: 800;
-            color: var(--text-primary);
+            color: var(--gray-800);
             margin-bottom: 4px;
         }
         
         .leaderboard-subtitle {
             font-size: 0.9rem;
-            color: var(--text-muted);
+            color: var(--gray-500);
         }
         
         .score-info {
@@ -922,7 +889,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            color: var(--text-secondary);
+            color: var(--gray-600);
         }
         
         .leaderboard-podium {
@@ -945,7 +912,7 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--bg-elevated), var(--border-light));
+            background: linear-gradient(135deg, var(--gray-200), var(--gray-300));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -975,7 +942,7 @@
         .podium-name {
             font-weight: 700;
             font-size: 0.9rem;
-            color: var(--text-primary);
+            color: var(--gray-800);
             margin-bottom: 2px;
             max-width: 90px;
             overflow: hidden;
@@ -985,7 +952,7 @@
         
         .podium-points {
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: var(--gray-500);
         }
         
         .podium-rank {
@@ -1001,7 +968,7 @@
             justify-content: center;
             padding-top: 8px;
             font-weight: 800;
-            color: var(--bg-dark);
+            color: white;
             font-size: 1.2rem;
         }
         
@@ -1036,13 +1003,13 @@
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            background: var(--bg-elevated);
+            background: var(--gray-100);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: var(--gray-600);
             flex-shrink: 0;
         }
         
@@ -1053,12 +1020,12 @@
         
         .leaderboard-user-name {
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--gray-800);
         }
         
         .leaderboard-user-stats {
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: var(--gray-500);
             display: flex;
             gap: 12px;
         }
@@ -1066,13 +1033,13 @@
         .leaderboard-points {
             font-weight: 700;
             font-size: 1.1rem;
-            color: var(--primary-light);
+            color: var(--ocean);
         }
         
         .leaderboard-empty {
             text-align: center;
             padding: 40px 20px;
-            color: var(--text-muted);
+            color: var(--gray-500);
         }
         
         .leaderboard-empty-icon {
@@ -1082,15 +1049,14 @@
 
         /* ===== About Section ===== */
         .about-hero {
-            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%);
+            background: linear-gradient(135deg, var(--ocean) 0%, var(--teal) 100%);
             border-radius: var(--radius-lg);
             padding: 32px 24px;
             text-align: center;
-            color: var(--text-primary);
+            color: white;
             margin-bottom: 20px;
             position: relative;
             overflow: hidden;
-            border: 1px solid var(--border);
         }
         
         .about-hero::before {
@@ -1098,8 +1064,8 @@
             position: absolute;
             inset: 0;
             background: url('castillo.jpg') center / cover no-repeat;
-            opacity: 0.1;
-            mix-blend-mode: luminosity;
+            opacity: 0.15;
+            mix-blend-mode: overlay;
         }
         
         .about-hero-content {
@@ -1116,15 +1082,11 @@
             font-size: 2rem;
             font-weight: 800;
             margin-bottom: 8px;
-            background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
         
         .about-tagline {
             font-size: 1.1rem;
-            color: var(--text-secondary);
+            opacity: 0.95;
         }
         
         .about-section {
@@ -1134,7 +1096,7 @@
         .about-section-title {
             font-size: 1.1rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--gray-800);
             margin-bottom: 12px;
             display: flex;
             align-items: center;
@@ -1142,7 +1104,7 @@
         }
         
         .about-text {
-            color: var(--text-secondary);
+            color: var(--gray-600);
             line-height: 1.7;
             font-size: 0.95rem;
         }
@@ -1166,25 +1128,24 @@
             width: 40px;
             height: 40px;
             border-radius: var(--radius);
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: linear-gradient(135deg, var(--ocean-light), var(--ocean));
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
             flex-shrink: 0;
-            box-shadow: var(--glow-primary);
         }
         
         .about-feature-text h4 {
             font-size: 0.95rem;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--gray-800);
             margin-bottom: 2px;
         }
         
         .about-feature-text p {
             font-size: 0.85rem;
-            color: var(--text-muted);
+            color: var(--gray-500);
             margin: 0;
         }
         
@@ -1206,18 +1167,17 @@
             border-radius: var(--radius);
             margin-bottom: 8px;
             box-shadow: var(--shadow);
-            border: 1px solid var(--border);
         }
         
         .about-heritage-name {
             font-size: 0.8rem;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--gray-700);
         }
         
         .about-heritage-desc {
             font-size: 0.7rem;
-            color: var(--text-muted);
+            color: var(--gray-500);
         }
         
         .about-stats {
@@ -1230,20 +1190,19 @@
         .about-stat {
             text-align: center;
             padding: 16px 8px;
-            background: var(--bg-elevated);
+            background: var(--gray-50);
             border-radius: var(--radius);
-            border: 1px solid var(--border);
         }
         
         .about-stat-value {
             font-size: 1.5rem;
             font-weight: 800;
-            color: var(--primary-light);
+            color: var(--ocean);
         }
         
         .about-stat-label {
             font-size: 0.75rem;
-            color: var(--text-muted);
+            color: var(--gray-500);
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -1251,20 +1210,19 @@
         .about-contact {
             margin-top: 16px;
             padding: 16px;
-            background: var(--bg-elevated);
+            background: var(--gray-50);
             border-radius: var(--radius);
             text-align: center;
-            border: 1px solid var(--border);
         }
         
         .about-contact p {
             font-size: 0.9rem;
-            color: var(--text-secondary);
+            color: var(--gray-600);
             margin: 0;
         }
         
         .about-contact a {
-            color: var(--primary-light);
+            color: var(--ocean);
             text-decoration: none;
             font-weight: 600;
         }
@@ -1328,16 +1286,16 @@
     <!-- ===== Header ===== -->
     <div id="header">
         <h1>
-            <i data-lucide="waves" style="width: 24px; height: 24px;"></i>
+            <span>🛶</span>
             <span>Chicleana</span>
         </h1>
         <nav>
-            <button id="nav-map" class="nav-btn active" title="Mapa"><i data-lucide="map" style="width: 20px; height: 20px;"></i></button>
-            <button id="nav-list" class="nav-btn" title="Lista"><i data-lucide="list" style="width: 20px; height: 20px;"></i></button>
-            <button id="nav-leaderboard" class="nav-btn" title="Ranking"><i data-lucide="trophy" style="width: 20px; height: 20px;"></i></button>
-            <button id="nav-report" class="nav-btn" title="Reportar"><i data-lucide="camera" style="width: 20px; height: 20px;"></i></button>
-            <button id="nav-about" class="nav-btn" title="Sobre"><i data-lucide="info" style="width: 20px; height: 20px;"></i></button>
-            <button id="nav-profile" class="nav-btn" title="Perfil"><i data-lucide="user" style="width: 20px; height: 20px;"></i></button>
+            <button id="nav-map" class="nav-btn active" title="Mapa">🗺️</button>
+            <button id="nav-list" class="nav-btn" title="Lista">📋</button>
+            <button id="nav-leaderboard" class="nav-btn" title="Ranking">🏆</button>
+            <button id="nav-report" class="nav-btn" title="Reportar">📸</button>
+            <button id="nav-about" class="nav-btn" title="Sobre">ℹ️</button>
+            <button id="nav-profile" class="nav-btn" title="Perfil">👤</button>
         </nav>
     </div>
 
@@ -1370,19 +1328,19 @@
     <script>
     // ========== DATA ==========
     var reports = [
-        { id:'1', lat:36.397014, lng:-6.204619, status:'open', trashType:'plastic_bottles', severity:'small', photoUrl:'https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=400&h=300&fit=crop', description:'Plastic bottles and wrappers on the bank near launch point', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'2', lat:36.398215, lng:-6.198826, status:'open', trashType:'beer_cans', severity:'small', photoUrl:'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&h=300&fit=crop', description:'Beer cans stuck in the reeds along the channel', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'3', lat:36.398832, lng:-6.199191, status:'open', trashType:'mixed_other', severity:'medium', photoUrl:'https://images.unsplash.com/photo-1604187351574-c75ca79f5807?w=400&h=300&fit=crop', description:'Mixed debris — bags, cans, old rope caught on branches', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'4', lat:36.400144, lng:-6.200891, status:'open', trashType:'cooler_box', severity:'medium', photoUrl:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop', description:'Abandoned cooler box half-submerged in mud', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'5', lat:36.401679, lng:-6.200269, status:'open', trashType:'fishing_gear', severity:'large', photoUrl:'https://images.unsplash.com/photo-1591981595060-b4b7bac9dcc0?w=400&h=300&fit=crop', description:'Old fishing nets and line tangled in the seagrass', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'6', lat:36.406486, lng:-6.196982, status:'claimed', trashType:'plastic_bottles', severity:'small', photoUrl:'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?w=400&h=300&fit=crop', description:'Plastic bottles wedged between rocks', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'7', lat:36.406757, lng:-6.196215, status:'open', trashType:'mixed_other', severity:'medium', photoUrl:'https://images.unsplash.com/photo-1617953141905-b27fb1f17d88?w=400&h=300&fit=crop', description:'Assorted trash washed up on small island shore', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'8', lat:36.406808, lng:-6.195377, status:'open', trashType:'chair', severity:'large', photoUrl:'https://images.unsplash.com/photo-1567113463300-102a7eb3cb26?w=400&h=300&fit=crop', description:'Broken chair dumped near the water edge', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'9', lat:36.406910, lng:-6.194998, status:'claimed', trashType:'beer_cans', severity:'small', photoUrl:'https://images.unsplash.com/photo-1571727153934-b9e0059b7ab2?w=400&h=300&fit=crop', description:'Beer cans and snack wrappers at fishing spot', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'10', lat:36.406698, lng:-6.194777, status:'cleaned', trashType:'plastic_bottles', severity:'small', photoUrl:'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&h=300&fit=crop', description:'Collected and removed — 3 bags of bottles', reporterName:'Karoly', cleanerName:'Karoly', date:'2026-08-06' },
-        { id:'11', lat:36.407000, lng:-6.200235, status:'open', trashType:'boat_kayak', severity:'large', photoUrl:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop', description:'Abandoned old boat frame rotting in the marsh', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'12', lat:36.402522, lng:-6.212348, status:'open', trashType:'mixed_other', severity:'medium', photoUrl:'https://images.unsplash.com/photo-1619451334792-150fd785ee74?w=400&h=300&fit=crop', description:'Trash accumulation at the channel bend', reporterName:'Karoly', date:'2026-08-06' },
-        { id:'13', lat:36.400114, lng:-6.210680, status:'open', trashType:'fishing_gear', severity:'medium', photoUrl:'https://images.unsplash.com/photo-1611270629569-8b357cb88da9?w=400&h=300&fit=crop', description:'Fishing line and bait containers left behind', reporterName:'Karoly', date:'2026-08-06' }
+        { id:'1', lat:36.397014, lng:-6.204619, status:'open', trashType:'plastic_bottles', severity:'small', photoUrl:'photos/20260806_111611.jpg', description:'Plastic bottles and wrappers on the bank near launch point', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'2', lat:36.398215, lng:-6.198826, status:'open', trashType:'beer_cans', severity:'small', photoUrl:'photos/20260806_112515.jpg', description:'Beer cans stuck in the reeds along the channel', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'3', lat:36.398832, lng:-6.199191, status:'open', trashType:'mixed_other', severity:'medium', photoUrl:'photos/20260806_112806.jpg', description:'Mixed debris — bags, cans, old rope caught on branches', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'4', lat:36.400144, lng:-6.200891, status:'open', trashType:'cooler_box', severity:'medium', photoUrl:'photos/20260806_113124.jpg', description:'Abandoned cooler box half-submerged in mud', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'5', lat:36.401679, lng:-6.200269, status:'open', trashType:'fishing_gear', severity:'large', photoUrl:'photos/20260806_113423.jpg', description:'Old fishing nets and line tangled in the seagrass', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'6', lat:36.406486, lng:-6.196982, status:'claimed', trashType:'plastic_bottles', severity:'small', photoUrl:'photos/20260806_114833.jpg', description:'Plastic bottles wedged between rocks', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'7', lat:36.406757, lng:-6.196215, status:'open', trashType:'mixed_other', severity:'medium', photoUrl:'photos/20260806_115100.jpg', description:'Assorted trash washed up on small island shore', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'8', lat:36.406808, lng:-6.195377, status:'open', trashType:'chair', severity:'large', photoUrl:'photos/20260806_115227.jpg', description:'Broken chair dumped near the water edge', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'9', lat:36.406910, lng:-6.194998, status:'claimed', trashType:'beer_cans', severity:'small', photoUrl:'photos/20260806_115333.jpg', description:'Beer cans and snack wrappers at fishing spot', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'10', lat:36.406698, lng:-6.194777, status:'cleaned', trashType:'plastic_bottles', severity:'small', photoUrl:'photos/20260806_115608.jpg', description:'Collected and removed — 3 bags of bottles', reporterName:'Karoly', cleanerName:'Karoly', date:'2026-08-06' },
+        { id:'11', lat:36.407000, lng:-6.200235, status:'open', trashType:'boat_kayak', severity:'large', photoUrl:'photos/20260806_120538.jpg', description:'Abandoned old boat frame rotting in the marsh', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'12', lat:36.402522, lng:-6.212348, status:'open', trashType:'mixed_other', severity:'medium', photoUrl:'photos/20260806_122213.jpg', description:'Trash accumulation at the channel bend', reporterName:'Karoly', date:'2026-08-06' },
+        { id:'13', lat:36.400114, lng:-6.210680, status:'open', trashType:'fishing_gear', severity:'medium', photoUrl:'photos/20260806_122709.jpg', description:'Fishing line and bait containers left behind', reporterName:'Karoly', date:'2026-08-06' }
     ];
 
     var PIN_COLORS = { 
@@ -1747,7 +1705,7 @@
         html += '<p>¿Ideas? ¿Sugerencias? ¿Quieres colaborar?</p>';
         html += '<p style="margin-top: 8px;"><a href="mailto:chicleana@example.com">chicleana@example.com</a></p>';
         html += '</div>';
-        html += '<div style="margin-top: 16px; text-align: center; font-size: 0.8rem; color: var(--text-muted);">';
+        html += '<div style="margin-top: 16px; text-align: center; font-size: 0.8rem; color: var(--gray-400);">';
         html += '<p>Hecho con 💚 en Chiclana de la Frontera</p>';
         html += '<p>2026 · Código abierto</p>';
         html += '</div>';
@@ -1869,9 +1827,9 @@
     // ========== PROFILE / AUTH ==========
     document.getElementById('panel-profile').innerHTML = `
         <div class="card">
-            <h2 class="section-title"><i data-lucide="user" style="width: 20px; height: 20px;"></i> Tu cuenta</h2>
+            <h2 class="section-title">👤 Tu cuenta</h2>
             <div id="auth-ui"></div>
-            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center;">
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--gray-200); text-align: center;">
                 <button id="show-intro-btn" class="btn btn-outline btn-sm">
                     Ver la introducción otra vez
                 </button>
@@ -2027,9 +1985,5 @@
     </script>
     <!-- EXIF.js for GPS extraction -->
     <script src="https://cdn.jsdelivr.net/npm/exif-js@2.3.0/exif.min.js"></script>
-    <!-- Initialize Lucide Icons -->
-    <script>
-        lucide.createIcons();
-    </script>
 </body>
 </html>
