@@ -1327,7 +1327,8 @@
 
     <script>
     // ========== DATA ==========
-    var reports = [
+    // Original reports, shown alongside the ones loaded from Firestore
+    var seedReports = [
         { id:'1', lat:36.397014, lng:-6.204619, status:'open', trashType:'boat', severity:'large', photoUrl:'photos/20260806_111611.jpg', description:'Large rusty shipwreck partially submerged near the channel', reporterName:'Karoly', date:'2026-08-06' },
         { id:'2', lat:36.398215, lng:-6.198826, status:'open', trashType:'mixed_other', severity:'medium', photoUrl:'photos/20260806_112515.jpg', description:'Blue plastic tarp dumped on the marsh bank', reporterName:'Karoly', date:'2026-08-06' },
         { id:'3', lat:36.398832, lng:-6.199191, status:'open', trashType:'boat', severity:'large', photoUrl:'photos/20260806_112806.jpg', description:'Abandoned rusty shipwreck partially submerged in the bay', reporterName:'Karoly', date:'2026-08-06' },
@@ -1342,12 +1343,34 @@
         { id:'12', lat:36.402522, lng:-6.212348, status:'open', trashType:'boat', severity:'large', photoUrl:'photos/20260806_122213.jpg', description:'Abandoned cabin cruiser beached on sandbar', reporterName:'Karoly', date:'2026-08-06' },
         { id:'13', lat:36.400114, lng:-6.210680, status:'open', trashType:'boat', severity:'large', photoUrl:'photos/20260806_122709.jpg', description:'Abandoned boat beached near the bridge', reporterName:'Karoly', date:'2026-08-06' }
     ];
+    var reports = seedReports.slice();
 
-    var PIN_COLORS = { 
-        open: '#ef4444', 
-        claimed: '#f59e0b', 
-        cleaned: '#22c55e' 
+    var PIN_COLORS = {
+        open: '#ef4444',
+        claimed: '#f59e0b',
+        cleaned: '#22c55e'
     };
+
+    // Older Firestore reports were saved as 'spotted'; anything unknown counts as open
+    function normalizeStatus(status) {
+        return PIN_COLORS[status] ? status : 'open';
+    }
+
+    // Escape user-supplied text before putting it into innerHTML
+    function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // Seed reports have a trashType; Firestore reports have a materials list
+    function reportTitle(r) {
+        if (r.materials && r.materials.length) return r.materials.join(', ');
+        return (r.trashType || 'basura').replace(/_/g, ' ');
+    }
 
     // ========== WELCOME OVERLAY ==========
     var welcomeEl = document.getElementById('welcome');
@@ -1381,26 +1404,32 @@
         maxZoom: 19
     }).addTo(map);
 
-    reports.forEach(function(r) {
-        var marker = L.circleMarker([r.lat, r.lng], {
-            radius: 14, 
-            fillColor: PIN_COLORS[r.status], 
-            color: '#fff', 
-            weight: 3, 
-            opacity: 1, 
-            fillOpacity: 0.9
-        }).addTo(map);
+    var markersLayer = L.layerGroup().addTo(map);
 
-        var popup = '<div class="popup-content">' +
-            '<img src="'+r.photoUrl+'" class="popup-img" onerror="this.style.display=\'none\'">' +
-            '<div class="popup-title">'+r.trashType.replace(/_/g,' ')+'</div>' +
-            '<div class="popup-meta">'+r.severity+' · '+r.date+' · '+r.reporterName+'</div>' +
-            '<span class="status-badge status-'+r.status+'">'+r.status+'</span>' +
-            '<p class="popup-desc">'+r.description+'</p></div>';
+    function renderMap() {
+        markersLayer.clearLayers();
+        reports.forEach(function(r) {
+            var marker = L.circleMarker([r.lat, r.lng], {
+                radius: 14,
+                fillColor: PIN_COLORS[r.status],
+                color: '#fff',
+                weight: 3,
+                opacity: 1,
+                fillOpacity: 0.9
+            }).addTo(markersLayer);
 
-        marker.bindPopup(popup, {maxWidth: 280});
-        marker.on('mouseover', function(){ this.openPopup(); });
-    });
+            var popup = '<div class="popup-content">' +
+                '<img src="'+escapeHtml(r.photoUrl)+'" class="popup-img" onerror="this.style.display=\'none\'">' +
+                '<div class="popup-title">'+escapeHtml(reportTitle(r))+'</div>' +
+                '<div class="popup-meta">'+escapeHtml(r.severity)+' · '+escapeHtml(r.date)+' · '+escapeHtml(r.reporterName)+'</div>' +
+                '<span class="status-badge status-'+r.status+'">'+r.status+'</span>' +
+                '<p class="popup-desc">'+escapeHtml(r.description)+'</p></div>';
+
+            marker.bindPopup(popup, {maxWidth: 280});
+            marker.on('mouseover', function(){ this.openPopup(); });
+        });
+    }
+    renderMap();
 
     // ========== NAVIGATION ==========
     var navMap = document.getElementById('nav-map');
@@ -1460,10 +1489,10 @@
         var html = '<h3 class="section-title">📋 Todos los reportes <span class="section-count">('+reports.length+')</span></h3>';
         reports.forEach(function(r){
             html += '<div class="card"><div class="report-item">' +
-                '<img src="'+r.photoUrl+'" class="report-thumb" onerror="this.style.display=\'none\'">' +
+                '<img src="'+escapeHtml(r.photoUrl)+'" class="report-thumb" onerror="this.style.display=\'none\'">' +
                 '<div class="report-info">' +
-                '<div class="report-title">'+r.trashType.replace(/_/g,' ')+'</div>' +
-                '<div class="report-meta">'+r.severity+' · '+r.date+'</div></div>' +
+                '<div class="report-title">'+escapeHtml(reportTitle(r))+'</div>' +
+                '<div class="report-meta">'+escapeHtml(r.severity)+' · '+escapeHtml(r.date)+'</div></div>' +
                 '<span class="status-badge status-'+r.status+'">'+r.status+'</span></div></div>';
         });
         document.getElementById('panel-list').innerHTML = html;
@@ -1537,7 +1566,7 @@
             if (leaderboard.length >= 2) {
                 html += '<div class="podium-item silver">';
                 html += '<div class="podium-avatar">🥈</div>';
-                html += '<div class="podium-name">' + leaderboard[1].name + '</div>';
+                html += '<div class="podium-name">' + escapeHtml(leaderboard[1].name) + '</div>';
                 html += '<div class="podium-points">' + leaderboard[1].points + ' pts</div>';
                 html += '<div class="podium-stand">2</div>';
                 html += '</div>';
@@ -1546,7 +1575,7 @@
             // First place (center)
             html += '<div class="podium-item gold">';
             html += '<div class="podium-avatar">🥇</div>';
-            html += '<div class="podium-name">' + leaderboard[0].name + '</div>';
+            html += '<div class="podium-name">' + escapeHtml(leaderboard[0].name) + '</div>';
             html += '<div class="podium-points">' + leaderboard[0].points + ' pts</div>';
             html += '<div class="podium-stand">1</div>';
             html += '</div>';
@@ -1555,7 +1584,7 @@
             if (leaderboard.length >= 3) {
                 html += '<div class="podium-item bronze">';
                 html += '<div class="podium-avatar">🥉</div>';
-                html += '<div class="podium-name">' + leaderboard[2].name + '</div>';
+                html += '<div class="podium-name">' + escapeHtml(leaderboard[2].name) + '</div>';
                 html += '<div class="podium-points">' + leaderboard[2].points + ' pts</div>';
                 html += '<div class="podium-stand">3</div>';
                 html += '</div>';
@@ -1570,7 +1599,7 @@
             html += '<div class="card"><div class="leaderboard-item">';
             html += '<div class="leaderboard-rank">' + (index + 1) + '</div>';
             html += '<div class="leaderboard-user">';
-            html += '<div class="leaderboard-user-name">' + user.name + '</div>';
+            html += '<div class="leaderboard-user-name">' + escapeHtml(user.name) + '</div>';
             html += '<div class="leaderboard-user-stats">';
             html += '<span>📸 ' + user.reports + ' reportes</span>';
             html += '<span>🧹 ' + user.cleans + ' limpiezas</span>';
@@ -1960,15 +1989,57 @@ Analiza la foto y responde ÚNICAMENTE con un objeto JSON, sin texto adicional:
             renderAuthUI();
             renderReportGate();
         });
+        loadReports();
     });
+
+    // ========== LOAD REPORTS FROM FIRESTORE ==========
+    async function loadReports(){
+        var FB = window.FB;
+        try{
+            var snapshot = await FB.getDocs(FB.collection(FB.db, 'reports'));
+            var remote = snapshot.docs.map(function(d){
+                var data = d.data();
+                var created = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate() : null;
+                return {
+                    id: d.id,
+                    lat: data.lat,
+                    lng: data.lng,
+                    status: normalizeStatus(data.status),
+                    materials: data.materials || [],
+                    severity: data.severity,
+                    photoUrl: data.photoUrl,
+                    description: data.description,
+                    reporterName: data.reporterName,
+                    cleanerName: data.cleanerName,
+                    date: created ? created.toISOString().slice(0, 10) : '',
+                    createdAt: created ? created.getTime() : 0
+                };
+            }).filter(function(r){
+                return typeof r.lat === 'number' && typeof r.lng === 'number';
+            }).sort(function(a, b){
+                return b.createdAt - a.createdAt;
+            });
+            reports = remote.concat(seedReports);
+            refreshViews();
+        }catch(err){
+            console.warn('Could not load reports:', err);
+        }
+    }
+
+    function refreshViews(){
+        renderMap();
+        if(document.getElementById('panel-list').classList.contains('active')) renderList();
+        if(document.getElementById('panel-leaderboard').classList.contains('active')) renderLeaderboard();
+        if(document.getElementById('panel-about').classList.contains('active')) renderAbout();
+    }
 
     function renderAuthUI(){
         var el = document.getElementById('auth-ui');
         if(currentUser){
             el.innerHTML = `
                 <div class="user-info">
-                    <div class="user-name">${currentUser.displayName || 'Usuario'}</div>
-                    <div class="user-email">${currentUser.email}</div>
+                    <div class="user-name">${escapeHtml(currentUser.displayName || 'Usuario')}</div>
+                    <div class="user-email">${escapeHtml(currentUser.email)}</div>
                 </div>
                 <button id="logout-btn" class="btn btn-danger btn-block">Cerrar sesión</button>
             `;
@@ -2091,7 +2162,7 @@ Analiza la foto y responde ÚNICAMENTE con un objeto JSON, sin texto adicional:
                 materials: selectedMaterials,
                 severity: document.getElementById('rpt-severity').value,
                 description: document.getElementById('rpt-desc').value,
-                status: 'spotted',
+                status: 'open',
                 createdAt: FB.serverTimestamp()
             });
 
@@ -2105,10 +2176,11 @@ Analiza la foto y responde ÚNICAMENTE con un objeto JSON, sin texto adicional:
             reportGPS = null;
             selectedMaterials = [];
             document.querySelectorAll('#material-tags button').forEach(function(b){ 
-                b.classList.remove('selected'); 
+                b.classList.remove('selected');
             });
+            loadReports();
         }catch(err){
-            statusEl.innerHTML = '<div class="status-msg error">❌ '+err.message+'</div>';
+            statusEl.innerHTML = '<div class="status-msg error">❌ '+escapeHtml(err.message)+'</div>';
         }
     };
     </script>

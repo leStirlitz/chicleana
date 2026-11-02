@@ -30,7 +30,7 @@ Community waterway cleanup platform for kayakers, canoers, and fishermen in the 
 ## Screenshots
 
 The map shows trash reports as colored pins:
-- 🔴 Red = spotted (needs cleanup)
+- 🔴 Red = open (needs cleanup)
 - 🟡 Yellow = claimed (someone's on it)
 - 🟢 Green = cleaned
 
